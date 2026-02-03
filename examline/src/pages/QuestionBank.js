@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import BackToMainButton from "../components/BackToMainButton";
 import QuestionCreator from "../components/QuestionCreator";
@@ -9,7 +8,6 @@ import { useModal } from "../hooks";
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:4000";
 
 const QuestionBank = () => {
-  const navigate = useNavigate();
   const { modal, showModal, closeModal } = useModal();
   const [questions, setQuestions] = useState([]);
   const [showCreator, setShowCreator] = useState(false);
@@ -79,11 +77,6 @@ const QuestionBank = () => {
 
   const handleAddQuestion = async (questionData) => {
     try {
-      if (!newQuestionTitulo.trim()) {
-        setError("Por favor ingresa un título para la pregunta");
-        return;
-      }
-
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_BASE_URL}/question-bank`, {
         method: "POST",
@@ -93,7 +86,7 @@ const QuestionBank = () => {
         },
         body: JSON.stringify({
           ...questionData,
-          titulo: newQuestionTitulo,
+          titulo: newQuestionTitulo.trim() || "Sin título",
           tags: newQuestionTags
         }),
       });
@@ -309,7 +302,7 @@ const QuestionBank = () => {
             <div className="mb-4">
               <label className="form-label d-flex align-items-center gap-2">
                 <i className="fas fa-heading text-muted"></i>
-                Título de la pregunta
+                Título de la pregunta (opcional)
               </label>
               <input
                 type="text"
@@ -545,6 +538,64 @@ const QuestionBank = () => {
 
                         <div className="mb-3">
                           <label className="form-label">
+                            <i className="fas fa-tags text-muted me-2"></i>
+                            Etiquetas
+                          </label>
+                          <div className="d-flex gap-2 mb-2">
+                            <input
+                              type="text"
+                              className="form-control"
+                              placeholder="Agregar etiqueta (presiona Enter)"
+                              value={tagInput}
+                              onChange={(e) => setTagInput(e.target.value)}
+                              onKeyPress={handleEditTagInputKeyPress}
+                              style={{
+                                padding: '0.75rem 1rem',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px'
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-outline-primary btn-sm"
+                              onClick={handleAddEditTag}
+                              style={{ minWidth: '80px' }}
+                            >
+                              <i className="fas fa-plus me-1"></i>
+                              Agregar
+                            </button>
+                          </div>
+                          {editData.tags && editData.tags.length > 0 && (
+                            <div className="d-flex flex-wrap gap-2 mt-2">
+                              {editData.tags.map((tag, tagIndex) => (
+                                <span
+                                  key={tagIndex}
+                                  className="badge"
+                                  style={{
+                                    backgroundColor: 'var(--primary-color)',
+                                    color: 'white',
+                                    padding: '0.5rem 0.75rem',
+                                    fontSize: '0.875rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    borderRadius: '6px'
+                                  }}
+                                >
+                                  {tag}
+                                  <i
+                                    className="fas fa-times"
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={() => handleRemoveEditTag(tag)}
+                                  ></i>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mb-3">
+                          <label className="form-label">
                             <i className="fas fa-comment-alt text-muted me-2"></i>
                             Texto de la pregunta
                           </label>
@@ -629,64 +680,6 @@ const QuestionBank = () => {
                               </option>
                             ))}
                           </select>
-                        </div>
-
-                        <div className="mb-3">
-                          <label className="form-label">
-                            <i className="fas fa-tags text-muted me-2"></i>
-                            Etiquetas
-                          </label>
-                          <div className="d-flex gap-2 mb-2">
-                            <input
-                              type="text"
-                              className="form-control"
-                              placeholder="Agregar etiqueta (presiona Enter)"
-                              value={tagInput}
-                              onChange={(e) => setTagInput(e.target.value)}
-                              onKeyPress={handleEditTagInputKeyPress}
-                              style={{
-                                padding: '0.75rem 1rem',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '8px'
-                              }}
-                            />
-                            <button
-                              type="button"
-                              className="btn btn-outline-primary btn-sm"
-                              onClick={handleAddEditTag}
-                              style={{ minWidth: '80px' }}
-                            >
-                              <i className="fas fa-plus me-1"></i>
-                              Agregar
-                            </button>
-                          </div>
-                          {editData.tags && editData.tags.length > 0 && (
-                            <div className="d-flex flex-wrap gap-2 mt-2">
-                              {editData.tags.map((tag, tagIndex) => (
-                                <span
-                                  key={tagIndex}
-                                  className="badge"
-                                  style={{
-                                    backgroundColor: 'var(--primary-color)',
-                                    color: 'white',
-                                    padding: '0.5rem 0.75rem',
-                                    fontSize: '0.875rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    borderRadius: '6px'
-                                  }}
-                                >
-                                  {tag}
-                                  <i
-                                    className="fas fa-times"
-                                    style={{ cursor: 'pointer' }}
-                                    onClick={() => handleRemoveEditTag(tag)}
-                                  ></i>
-                                </span>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       </>
                     ) : (

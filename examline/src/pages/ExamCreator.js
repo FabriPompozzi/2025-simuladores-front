@@ -6,6 +6,7 @@ import { useModal } from "../hooks";
 import BackToMainButton from "../components/BackToMainButton";
 import Modal from "../components/Modal";
 import QuestionCreator from "../components/QuestionCreator";
+import QuestionBankSelector from "../components/QuestionBankSelector";
 import { createExam } from "../services/api";
 
 const ExamCreator = () => {
@@ -28,10 +29,21 @@ const ExamCreator = () => {
   
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showBankSelector, setShowBankSelector] = useState(false);
 
   // Agregar pregunta al listado (callback para el componente hijo)
   const handleAddQuestion = (nuevaPregunta) => {
     setPreguntas([...preguntas, nuevaPregunta]);
+  };
+
+  // Agregar preguntas desde el banco
+  const handleAddQuestionsFromBank = (selectedQuestions) => {
+    setPreguntas([...preguntas, ...selectedQuestions]);
+  };
+
+  // Eliminar pregunta del examen
+  const handleRemoveQuestion = (index) => {
+    setPreguntas(preguntas.filter((_, i) => i !== index));
   };
 
   // Funciones para manejar test cases
@@ -410,7 +422,50 @@ const ExamCreator = () => {
 
         {/* Agregar pregunta - Solo para múltiple choice */}
         {tipoExamen === "multiple_choice" && (
-          <QuestionCreator onAddQuestion={handleAddQuestion} />
+          <>
+            <div className="modern-card mb-4">
+              <div className="modern-card-header">
+                <h3 className="modern-card-title">
+                  <i className="fas fa-question-circle me-2"></i>
+                  Agregar Preguntas al Examen
+                </h3>
+              </div>
+              <div className="modern-card-body">
+                <div className="alert alert-info mb-3">
+                  <i className="fas fa-info-circle me-2"></i>
+                  <strong>Tienes dos opciones:</strong> crear una pregunta nueva desde cero o seleccionar preguntas guardadas en tu banco de preguntas.
+                </div>
+                <div className="d-flex gap-3 justify-content-center flex-wrap">
+                  <button
+                    className="modern-btn modern-btn-primary"
+                    onClick={() => setShowBankSelector(true)}
+                    style={{ minWidth: '250px' }}
+                  >
+                    <i className="fas fa-database me-2"></i>
+                    <span className="button-text">Seleccionar del Banco</span>
+                  </button>
+                  <div className="text-muted d-flex align-items-center">
+                    <strong>o</strong>
+                  </div>
+                  <button
+                    className="modern-btn modern-btn-secondary"
+                    onClick={() => {
+                      const creator = document.getElementById('question-creator-section');
+                      if (creator) creator.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    style={{ minWidth: '250px' }}
+                  >
+                    <i className="fas fa-plus-circle me-2"></i>
+                    <span className="button-text">Crear Pregunta Nueva</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div id="question-creator-section">
+              <QuestionCreator onAddQuestion={handleAddQuestion} />
+            </div>
+          </>
         )}
 
       {/* Lista de preguntas - Solo para múltiple choice */}
@@ -438,14 +493,24 @@ const ExamCreator = () => {
               {preguntas.map((p, idx) => (
                 <div key={idx} className="exam-creator-question-card">
                   <div className="exam-card">
-                    <div className="exam-card-header">
-                      <h5 className="exam-title">
-                        <span className="question-number">Pregunta {idx + 1}</span>
-                      </h5>
-                      <span className="exam-badge">
-                        <i className="fas fa-check-circle"></i>
-                        <span className="badge-text">Lista</span>
-                      </span>
+                    <div className="exam-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <div className="d-flex align-items-center gap-2">
+                        <h5 className="exam-title mb-0">
+                          <span className="question-number">Pregunta {idx + 1}</span>
+                        </h5>
+                        <span className="exam-badge">
+                          <i className="fas fa-check-circle"></i>
+                          <span className="badge-text">Lista</span>
+                        </span>
+                      </div>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleRemoveQuestion(idx)}
+                        title="Eliminar pregunta"
+                        style={{ padding: '0.25rem 0.5rem' }}
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
                     </div>
                     <div className="exam-card-body">
                       <div className="question-text mb-3">
@@ -505,6 +570,13 @@ const ExamCreator = () => {
         showCancel={modal.showCancel}
         confirmText={(modal.type === 'warning') ? 'Confirmar' : 'Entendido'}
         cancelText="Cancelar"
+      />
+
+      {/* Question Bank Selector Modal */}
+      <QuestionBankSelector
+        show={showBankSelector}
+        onClose={() => setShowBankSelector(false)}
+        onSelectQuestions={handleAddQuestionsFromBank}
       />
     </div>
   );
