@@ -22,6 +22,7 @@ const QuestionBank = () => {
   const [newQuestionTitulo, setNewQuestionTitulo] = useState("");
   const [newQuestionTags, setNewQuestionTags] = useState([]);
   const [newQuestionTagInput, setNewQuestionTagInput] = useState("");
+  const [searchFilter, setSearchFilter] = useState("");
 
   // Cargar preguntas del banco al montar el componente
   useEffect(() => {
@@ -62,6 +63,19 @@ const QuestionBank = () => {
       setLoading(false);
     }
   };
+
+  // Filtrar preguntas basándose en el texto o tags
+  const filteredQuestions = questions.filter((question) => {
+    if (!searchFilter.trim()) return true;
+    
+    const searchTerm = searchFilter.toLowerCase();
+    const titleMatch = question.titulo?.toLowerCase().includes(searchTerm);
+    const textMatch = question.texto?.toLowerCase().includes(searchTerm);
+    const tagsMatch = Array.isArray(question.tags) && 
+      question.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+    
+    return titleMatch || textMatch || tagsMatch;
+  });
 
   const handleAddQuestion = async (questionData) => {
     try {
@@ -384,6 +398,43 @@ const QuestionBank = () => {
             Mis Preguntas Guardadas ({questions.length})
           </h3>
         </div>
+        
+        {/* Barra de búsqueda */}
+        <div className="modern-card-body" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+          <div className="input-group">
+            <span className="input-group-text" style={{ backgroundColor: 'white', border: '1px solid var(--border-color)' }}>
+              <i className="fas fa-search text-muted"></i>
+            </span>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Buscar por título, texto o etiquetas..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              style={{
+                padding: '0.75rem 1rem',
+                border: '1px solid var(--border-color)',
+                borderLeft: 'none',
+                fontSize: '1rem'
+              }}
+            />
+            {searchFilter && (
+              <button
+                className="btn btn-outline-secondary"
+                onClick={() => setSearchFilter('')}
+                title="Limpiar búsqueda"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            )}
+          </div>
+          {searchFilter && (
+            <div className="mt-2 text-muted small">
+              <i className="fas fa-info-circle me-1"></i>
+              Mostrando {filteredQuestions.length} de {questions.length} preguntas
+            </div>
+          )}
+        </div>
         <div className="modern-card-body">
           {loading ? (
             <div className="text-center py-5">
@@ -401,9 +452,26 @@ const QuestionBank = () => {
                 Crea tu primera pregunta usando el formulario de arriba
               </p>
             </div>
+          ) : filteredQuestions.length === 0 && searchFilter ? (
+            <div className="empty-state">
+              <div className="empty-icon">
+                <i className="fas fa-search"></i>
+              </div>
+              <h4 className="empty-title">No se encontraron preguntas</h4>
+              <p className="empty-subtitle">
+                No hay preguntas que coincidan con "<strong>{searchFilter}</strong>"
+              </p>
+              <button
+                className="btn btn-outline-primary mt-3"
+                onClick={() => setSearchFilter('')}
+              >
+                <i className="fas fa-times me-2"></i>
+                Limpiar búsqueda
+              </button>
+            </div>
           ) : (
             <div className="questions-list">
-              {questions.map((question, index) => (
+              {filteredQuestions.map((question, index) => (
                 <div key={question.id} className="modern-card mb-3" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                   <div className="modern-card-body">
                     <div className="d-flex justify-content-between align-items-start mb-3">
