@@ -1,7 +1,7 @@
-// src/components/MultipleChoiceQuestionCreator.jsx
+// src/components/QuestionCreator.jsx
 import React, { useState } from "react";
 
-const MultipleChoiceQuestionCreator = ({ onAddQuestion }) => {
+const QuestionCreator = ({ onAddQuestion }) => {
   const [textoPregunta, setTextoPregunta] = useState("");
   const [opciones, setOpciones] = useState(["", ""]);
   const [correcta, setCorrecta] = useState(0);
@@ -182,4 +182,4 @@ const MultipleChoiceQuestionCreator = ({ onAddQuestion }) => {
   );
 };
 
-export default MultipleChoiceQuestionCreator;
+export default QuestionCreator;

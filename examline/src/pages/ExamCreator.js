@@ -5,7 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useModal } from "../hooks";
 import BackToMainButton from "../components/BackToMainButton";
 import Modal from "../components/Modal";
-import MultipleChoiceQuestionCreator from "../components/MultipleChoiceQuestionCreator";
+import QuestionCreator from "../components/QuestionCreator";
 import { createExam } from "../services/api";
 
 const ExamCreator = () => {
@@ -410,7 +410,7 @@ const ExamCreator = () => {
 
         {/* Agregar pregunta - Solo para múltiple choice */}
         {tipoExamen === "multiple_choice" && (
-          <MultipleChoiceQuestionCreator onAddQuestion={handleAddQuestion} />
+          <QuestionCreator onAddQuestion={handleAddQuestion} />
         )}
 
       {/* Lista de preguntas - Solo para múltiple choice */}

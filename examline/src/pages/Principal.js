@@ -122,6 +122,13 @@ const Principal = () => {
               <div className="d-flex gap-2 flex-wrap justify-content-end">
                 <button 
                   className="modern-btn modern-btn-secondary modern-btn-sm" 
+                  onClick={() => navigate("/question-bank")}
+                >
+                  <i className="fas fa-database me-2"></i>
+                  <span className="btn-text">Banco de Preguntas</span>
+                </button>
+                <button 
+                  className="modern-btn modern-btn-secondary modern-btn-sm" 
                   onClick={() => navigate("/exam-windows")}
                 >
                   <i className="fas fa-calendar-alt me-2"></i>
