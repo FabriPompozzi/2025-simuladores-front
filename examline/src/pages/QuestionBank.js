@@ -16,6 +16,12 @@ const QuestionBank = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editData, setEditData] = useState({ titulo: "", texto: "", opciones: [], correcta: 0, tags: [] });
+  const [tagInput, setTagInput] = useState("");
+  const [newQuestionTitulo, setNewQuestionTitulo] = useState("");
+  const [newQuestionTags, setNewQuestionTags] = useState([]);
+  const [newQuestionTagInput, setNewQuestionTagInput] = useState("");
 
   // Cargar preguntas del banco al montar el componente
   useEffect(() => {
@@ -59,6 +65,11 @@ const QuestionBank = () => {
 
   const handleAddQuestion = async (questionData) => {
     try {
+      if (!newQuestionTitulo.trim()) {
+        setError("Por favor ingresa un título para la pregunta");
+        return;
+      }
+
       const token = localStorage.getItem("token");
       const response = await fetch(`${API_BASE_URL}/question-bank`, {
         method: "POST",
@@ -66,7 +77,11 @@ const QuestionBank = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(questionData),
+        body: JSON.stringify({
+          ...questionData,
+          titulo: newQuestionTitulo,
+          tags: newQuestionTags
+        }),
       });
 
       if (!response.ok) {
@@ -77,9 +92,111 @@ const QuestionBank = () => {
       setQuestions([newQuestion, ...questions]);
       setSuccessMessage("Pregunta guardada exitosamente");
       setTimeout(() => setSuccessMessage(""), 3000);
+      
+      // Limpiar campos adicionales
+      setNewQuestionTitulo("");
+      setNewQuestionTags([]);
+      setNewQuestionTagInput("");
     } catch (err) {
-      setError("Error al guardar la pregunta");
+      setError(err.message || "Error al guardar la pregunta");
       console.error(err);
+    }
+  };
+
+  const handleAddNewQuestionTag = () => {
+    if (newQuestionTagInput.trim() && !newQuestionTags.includes(newQuestionTagInput.trim())) {
+      setNewQuestionTags([...newQuestionTags, newQuestionTagInput.trim()]);
+      setNewQuestionTagInput("");
+    }
+  };
+
+  const handleRemoveNewQuestionTag = (tagToRemove) => {
+    setNewQuestionTags(newQuestionTags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleNewQuestionTagInputKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddNewQuestionTag();
+    }
+  };
+
+  const handleEditQuestion = (question) => {
+    setEditingId(question.id);
+    setEditData({
+      titulo: question.titulo || "",
+      texto: question.texto,
+      opciones: [...question.opciones],
+      correcta: question.correcta,
+      tags: Array.isArray(question.tags) ? [...question.tags] : []
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditData({ titulo: "", texto: "", opciones: [], correcta: 0, tags: [] });
+    setTagInput("");
+  };
+
+  const handleSaveEdit = async (questionId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/question-bank/${questionId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(editData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al actualizar pregunta");
+      }
+
+      const updatedQuestion = await response.json();
+      setQuestions(questions.map((q) => (q.id === questionId ? updatedQuestion : q)));
+      setSuccessMessage("Pregunta actualizada exitosamente");
+      setTimeout(() => setSuccessMessage(""), 3000);
+      handleCancelEdit();
+    } catch (err) {
+      setError("Error al actualizar la pregunta");
+      console.error(err);
+    }
+  };
+
+  const handleAddOption = () => {
+    if (editData.opciones.length < 10) {
+      setEditData({ ...editData, opciones: [...editData.opciones, ""] });
+    }
+  };
+
+  const handleRemoveOption = (index) => {
+    if (editData.opciones.length > 2) {
+      const newOpciones = editData.opciones.filter((_, i) => i !== index);
+      setEditData({
+        ...editData,
+        opciones: newOpciones,
+        correcta: editData.correcta >= newOpciones.length ? newOpciones.length - 1 : editData.correcta
+      });
+    }
+  };
+
+  const handleAddEditTag = () => {
+    if (tagInput.trim() && !editData.tags.includes(tagInput.trim())) {
+      setEditData({ ...editData, tags: [...editData.tags, tagInput.trim()] });
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveEditTag = (tagToRemove) => {
+    setEditData({ ...editData, tags: editData.tags.filter(tag => tag !== tagToRemove) });
+  };
+
+  const handleEditTagInputKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddEditTag();
     }
   };
 
@@ -173,7 +290,87 @@ const QuestionBank = () => {
           </h3>
         </div>
         {showCreator && (
-          <div className="modern-card-body p-0">
+          <div className="modern-card-body">
+            {/* Campos adicionales para el banco de preguntas */}
+            <div className="mb-4">
+              <label className="form-label d-flex align-items-center gap-2">
+                <i className="fas fa-heading text-muted"></i>
+                Título de la pregunta
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Ej: Pregunta sobre matemáticas básicas"
+                value={newQuestionTitulo}
+                onChange={(e) => setNewQuestionTitulo(e.target.value)}
+                style={{
+                  padding: '0.75rem 1rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  fontSize: '1rem'
+                }}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="form-label d-flex align-items-center gap-2">
+                <i className="fas fa-tags text-muted"></i>
+                Etiquetas (opcional)
+              </label>
+              <div className="d-flex gap-2 mb-2">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Agregar etiqueta (presiona Enter)"
+                  value={newQuestionTagInput}
+                  onChange={(e) => setNewQuestionTagInput(e.target.value)}
+                  onKeyPress={handleNewQuestionTagInputKeyPress}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '1rem'
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={handleAddNewQuestionTag}
+                  style={{ minWidth: '100px' }}
+                >
+                  <i className="fas fa-plus me-2"></i>
+                  Agregar
+                </button>
+              </div>
+              {newQuestionTags.length > 0 && (
+                <div className="d-flex flex-wrap gap-2 mt-2">
+                  {newQuestionTags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="badge"
+                      style={{
+                        backgroundColor: 'var(--primary-color)',
+                        color: 'white',
+                        padding: '0.5rem 0.75rem',
+                        fontSize: '0.875rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      {tag}
+                      <i
+                        className="fas fa-times"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleRemoveNewQuestionTag(tag)}
+                      ></i>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <QuestionCreator onAddQuestion={handleAddQuestion} />
           </div>
         )}
@@ -212,52 +409,281 @@ const QuestionBank = () => {
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <h5 className="mb-0">
                         <i className="fas fa-question-circle me-2 text-primary"></i>
-                        Pregunta #{index + 1}
+                        {question.titulo || `Pregunta #${index + 1}`}
                       </h5>
-                      <button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => handleDeleteQuestion(question.id)}
-                        title="Eliminar pregunta"
-                      >
-                        <i className="fas fa-trash me-1"></i>
-                        Eliminar
-                      </button>
-                    </div>
-                    <p className="mb-3" style={{ fontSize: '1.1rem', fontWeight: '500' }}>
-                      {question.texto}
-                    </p>
-                    <div className="mb-2">
-                      <strong className="text-muted">Opciones:</strong>
-                    </div>
-                    <ul className="list-group mb-3">
-                      {Array.isArray(question.opciones) ? (
-                        question.opciones.map((opcion, i) => (
-                          <li
-                            key={i}
-                            className={`list-group-item ${
-                              i === question.correcta ? 'list-group-item-success' : ''
-                            }`}
+                      {editingId !== question.id ? (
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-outline-primary btn-sm"
+                            onClick={() => handleEditQuestion(question)}
+                            title="Editar pregunta"
                           >
-                            {i === question.correcta && (
-                              <i className="fas fa-check-circle me-2 text-success"></i>
-                            )}
-                            <strong>Opción {i + 1}:</strong> {opcion}
-                          </li>
-                        ))
+                            <i className="fas fa-edit me-1"></i>
+                            Editar
+                          </button>
+                          <button
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={() => handleDeleteQuestion(question.id)}
+                            title="Eliminar pregunta"
+                          >
+                            <i className="fas fa-trash me-1"></i>
+                            Eliminar
+                          </button>
+                        </div>
                       ) : (
-                        <li className="list-group-item">Error: formato de opciones inválido</li>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="modern-btn modern-btn-primary"
+                            onClick={() => handleSaveEdit(question.id)}
+                            title="Guardar cambios"
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }}
+                          >
+                            <i className="fas fa-save me-1"></i>
+                            <span className="button-text">Guardar</span>
+                          </button>
+                          <button
+                            className="modern-btn modern-btn-secondary"
+                            onClick={handleCancelEdit}
+                            title="Cancelar edición"
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }}
+                          >
+                            <i className="fas fa-times me-1"></i>
+                            <span className="button-text">Cancelar</span>
+                          </button>
+                        </div>
                       )}
-                    </ul>
-                    <div className="text-muted small">
-                      <i className="fas fa-calendar me-2"></i>
-                      Creada: {new Date(question.createdAt).toLocaleDateString('es-ES', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
                     </div>
+
+                    {editingId === question.id ? (
+                      // Modo de edición
+                      <>
+                        <div className="mb-3">
+                          <label className="form-label">
+                            <i className="fas fa-heading text-muted me-2"></i>
+                            Título de la pregunta
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={editData.titulo}
+                            onChange={(e) => setEditData({ ...editData, titulo: e.target.value })}
+                            style={{
+                              padding: '0.75rem 1rem',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px'
+                            }}
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <label className="form-label">
+                            <i className="fas fa-comment-alt text-muted me-2"></i>
+                            Texto de la pregunta
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={editData.texto}
+                            onChange={(e) => setEditData({ ...editData, texto: e.target.value })}
+                            style={{
+                              padding: '0.75rem 1rem',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px'
+                            }}
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <label className="form-label">
+                            <i className="fas fa-list text-muted me-2"></i>
+                            Opciones de respuesta
+                          </label>
+                          {editData.opciones.map((opcion, i) => (
+                            <div key={i} className="d-flex gap-2 mb-2">
+                              <input
+                                type="text"
+                                className="form-control"
+                                placeholder={`Opción ${i + 1}`}
+                                value={opcion}
+                                onChange={(e) => {
+                                  const newOpciones = [...editData.opciones];
+                                  newOpciones[i] = e.target.value;
+                                  setEditData({ ...editData, opciones: newOpciones });
+                                }}
+                                style={{
+                                  padding: '0.6rem 0.8rem',
+                                  border: '1px solid var(--border-color)',
+                                  borderRadius: '6px'
+                                }}
+                              />
+                              {editData.opciones.length > 2 && (
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-danger btn-sm"
+                                  onClick={() => handleRemoveOption(i)}
+                                  style={{ minWidth: '40px' }}
+                                >
+                                  <i className="fas fa-trash"></i>
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {editData.opciones.length < 10 && (
+                            <button
+                              type="button"
+                              className="btn btn-outline-primary btn-sm mt-2"
+                              onClick={handleAddOption}
+                            >
+                              <i className="fas fa-plus me-2"></i>
+                              Agregar opción
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="mb-3">
+                          <label className="form-label">
+                            <i className="fas fa-check-circle text-muted me-2"></i>
+                            Respuesta correcta
+                          </label>
+                          <select
+                            className="form-select"
+                            value={editData.correcta}
+                            onChange={(e) => setEditData({ ...editData, correcta: Number(e.target.value) })}
+                            style={{
+                              padding: '0.75rem 1rem',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px'
+                            }}
+                          >
+                            {editData.opciones.map((_, i) => (
+                              <option key={i} value={i}>
+                                Opción {i + 1}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="mb-3">
+                          <label className="form-label">
+                            <i className="fas fa-tags text-muted me-2"></i>
+                            Etiquetas
+                          </label>
+                          <div className="d-flex gap-2 mb-2">
+                            <input
+                              type="text"
+                              className="form-control"
+                              placeholder="Agregar etiqueta (presiona Enter)"
+                              value={tagInput}
+                              onChange={(e) => setTagInput(e.target.value)}
+                              onKeyPress={handleEditTagInputKeyPress}
+                              style={{
+                                padding: '0.75rem 1rem',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px'
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-outline-primary btn-sm"
+                              onClick={handleAddEditTag}
+                              style={{ minWidth: '80px' }}
+                            >
+                              <i className="fas fa-plus me-1"></i>
+                              Agregar
+                            </button>
+                          </div>
+                          {editData.tags && editData.tags.length > 0 && (
+                            <div className="d-flex flex-wrap gap-2 mt-2">
+                              {editData.tags.map((tag, tagIndex) => (
+                                <span
+                                  key={tagIndex}
+                                  className="badge"
+                                  style={{
+                                    backgroundColor: 'var(--primary-color)',
+                                    color: 'white',
+                                    padding: '0.5rem 0.75rem',
+                                    fontSize: '0.875rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    borderRadius: '6px'
+                                  }}
+                                >
+                                  {tag}
+                                  <i
+                                    className="fas fa-times"
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={() => handleRemoveEditTag(tag)}
+                                  ></i>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      // Modo de visualización
+                      <>
+                        <p className="mb-3" style={{ fontSize: '1.1rem', fontWeight: '500' }}>
+                          {question.texto}
+                        </p>
+                        {question.tags && Array.isArray(question.tags) && question.tags.length > 0 && (
+                          <div className="mb-3">
+                            <strong className="text-muted me-2">Etiquetas:</strong>
+                            <div className="d-flex flex-wrap gap-2 mt-1">
+                              {question.tags.map((tag, tagIndex) => (
+                                <span
+                                  key={tagIndex}
+                                  className="badge"
+                                  style={{
+                                    backgroundColor: 'var(--primary-color)',
+                                    color: 'white',
+                                    padding: '0.4rem 0.65rem',
+                                    fontSize: '0.8rem',
+                                    borderRadius: '6px'
+                                  }}
+                                >
+                                  <i className="fas fa-tag me-1"></i>
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="mb-2">
+                          <strong className="text-muted">Opciones:</strong>
+                        </div>
+                        <ul className="list-group mb-3">
+                          {Array.isArray(question.opciones) ? (
+                            question.opciones.map((opcion, i) => (
+                              <li
+                                key={i}
+                                className={`list-group-item ${
+                                  i === question.correcta ? 'list-group-item-success' : ''
+                                }`}
+                              >
+                                {i === question.correcta && (
+                                  <i className="fas fa-check-circle me-2 text-success"></i>
+                                )}
+                                <strong>Opción {i + 1}:</strong> {opcion}
+                              </li>
+                            ))
+                          ) : (
+                            <li className="list-group-item">Error: formato de opciones inválido</li>
+                          )}
+                        </ul>
+                        <div className="text-muted small">
+                          <i className="fas fa-calendar me-2"></i>
+                          Creada: {new Date(question.createdAt).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
