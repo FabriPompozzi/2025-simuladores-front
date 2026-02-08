@@ -117,6 +117,15 @@ const QuestionCreator = ({ onAddQuestion }) => {
         setError("Complete todas las opciones incorrectas o elimínelas");
         return;
       }
+      
+      // Validar que no haya duplicados
+      const todasLasRespuestas = [...respuestasCorrectas, ...distractores].map(r => r.trim().toLowerCase());
+      const duplicados = todasLasRespuestas.filter((item, index) => todasLasRespuestas.indexOf(item) !== index);
+      
+      if (duplicados.length > 0) {
+        setError("No se permiten respuestas duplicadas. Verifica que no haya respuestas correctas o distractores repetidos.");
+        return;
+      }
     }
 
     // Preparar datos según el tipo de pregunta
@@ -335,9 +344,32 @@ const QuestionCreator = ({ onAddQuestion }) => {
                       placeholder={`Respuesta correcta para espacio ${i + 1}`}
                       value={respuesta}
                       onChange={(e) => {
+                        const nuevoValor = e.target.value;
+                        const valorTrim = nuevoValor.trim().toLowerCase();
+                        
+                        // Validar duplicados en tiempo real
+                        if (valorTrim) {
+                          // Verificar en otras respuestas correctas
+                          const duplicadoEnCorrectas = respuestasCorrectas.some((resp, idx) => 
+                            idx !== i && resp.trim().toLowerCase() === valorTrim
+                          );
+                          
+                          // Verificar en distractores
+                          const duplicadoEnDistractores = distractores.some(dist => 
+                            dist.trim().toLowerCase() === valorTrim
+                          );
+                          
+                          if (duplicadoEnCorrectas || duplicadoEnDistractores) {
+                            setError('Esta respuesta ya existe. No se permiten respuestas duplicadas.');
+                            setTimeout(() => setError(''), 3000);
+                            return;
+                          }
+                        }
+                        
                         const nuevasRespuestas = [...respuestasCorrectas];
-                        nuevasRespuestas[i] = e.target.value;
+                        nuevasRespuestas[i] = nuevoValor;
                         setRespuestasCorrectas(nuevasRespuestas);
+                        setError('');
                       }}
                       style={{
                         padding: '0.6rem 0.8rem',
@@ -407,9 +439,32 @@ const QuestionCreator = ({ onAddQuestion }) => {
                         placeholder={`Opción incorrecta ${i + 1}`}
                         value={distractor}
                         onChange={(e) => {
+                          const nuevoValor = e.target.value;
+                          const valorTrim = nuevoValor.trim().toLowerCase();
+                          
+                          // Validar duplicados en tiempo real
+                          if (valorTrim) {
+                            // Verificar en otros distractores
+                            const duplicadoEnDistractores = distractores.some((dist, idx) => 
+                              idx !== i && dist.trim().toLowerCase() === valorTrim
+                            );
+                            
+                            // Verificar en respuestas correctas
+                            const duplicadoEnCorrectas = respuestasCorrectas.some(resp => 
+                              resp.trim().toLowerCase() === valorTrim
+                            );
+                            
+                            if (duplicadoEnDistractores || duplicadoEnCorrectas) {
+                              setError('Esta opción ya existe. No se permiten respuestas duplicadas.');
+                              setTimeout(() => setError(''), 3000);
+                              return;
+                            }
+                          }
+                          
                           const nuevosDistractores = [...distractores];
-                          nuevosDistractores[i] = e.target.value;
+                          nuevosDistractores[i] = nuevoValor;
                           setDistractores(nuevosDistractores);
+                          setError('');
                         }}
                         style={{
                           padding: '0.6rem 0.8rem',
