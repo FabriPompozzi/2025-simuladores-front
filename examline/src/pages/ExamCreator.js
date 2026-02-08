@@ -206,7 +206,7 @@ const ExamCreator = () => {
                   fontSize: '1rem'
                 }}
               >
-                <option value="multiple_choice">Múltiple Choice</option>
+                <option value="multiple_choice">Preguntas</option>
                 <option value="programming">Programación</option>
               </select>
             </div>
@@ -498,6 +498,19 @@ const ExamCreator = () => {
                         <h5 className="exam-title mb-0">
                           <span className="question-number">Pregunta {idx + 1}</span>
                         </h5>
+                        <span 
+                          className="badge"
+                          style={{
+                            backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : '#007bff',
+                            color: 'white',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.7rem',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : 'fa-list-ul'} me-1`}></i>
+                          {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : 'Múltiple'}
+                        </span>
                         <span className="exam-badge">
                           <i className="fas fa-check-circle"></i>
                           <span className="badge-text">Lista</span>
@@ -517,12 +530,39 @@ const ExamCreator = () => {
                         <strong>{p.texto}</strong>
                       </div>
                       <div className="exam-info">
-                        {p.opciones.map((o, i) => (
-                          <div key={i} className="exam-info-item">
-                            <i className={i === p.correcta ? "fas fa-check-circle text-success" : "fas fa-circle text-muted"}></i>
-                            <span className={i === p.correcta ? "fw-bold text-success" : ""}>{o}</span>
-                          </div>
-                        ))}
+                        {p.tipo === 'fill_in_blank' ? (
+                          <>
+                            <div className="mb-2">
+                              <small className="text-success fw-bold"><i className="fas fa-check-circle me-1"></i>Respuestas correctas (en orden):</small>
+                            </div>
+                            {p.opciones.slice(0, p.correcta).map((o, i) => (
+                              <div key={i} className="exam-info-item">
+                                <span className="badge bg-success me-2" style={{ fontSize: '0.7rem' }}>{i + 1}</span>
+                                <span className="fw-bold text-success">{o}</span>
+                              </div>
+                            ))}
+                            {p.opciones.length > p.correcta && (
+                              <>
+                                <div className="mt-2 mb-2">
+                                  <small className="text-danger fw-bold"><i className="fas fa-times-circle me-1"></i>Distractores:</small>
+                                </div>
+                                {p.opciones.slice(p.correcta).map((o, i) => (
+                                  <div key={i} className="exam-info-item">
+                                    <i className="fas fa-times text-danger"></i>
+                                    <span>{o}</span>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          p.opciones.map((o, i) => (
+                            <div key={i} className="exam-info-item">
+                              <i className={i === p.correcta ? "fas fa-check-circle text-success" : "fas fa-circle text-muted"}></i>
+                              <span className={i === p.correcta ? "fw-bold text-success" : ""}>{o}</span>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   </div>
