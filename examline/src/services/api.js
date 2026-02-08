@@ -35,13 +35,22 @@ const handleResponse = async (response) => {
         }
       }
       
-      const error = new Error(data.error || `HTTP error! status: ${response.status}`);
+      // Mensaje más específico para errores 403
+      let errorMessage = data.error;
+      if (!errorMessage && response.status === 403) {
+        errorMessage = 'No está autorizado para ver este recurso';
+      }
+      
+      const error = new Error(errorMessage || `HTTP error! status: ${response.status}`);
       error.status = response.status;
       error.code = data.code;
       throw error;
     } catch (parseError) {
-      // Si no se puede parsear el JSON, crear error genérico
-      const error = new Error(`HTTP error! status: ${response.status}`);
+      // Si no se puede parsear el JSON, crear error con mensaje apropiado
+      const errorMessage = response.status === 403 
+        ? 'No está autorizado para ver este recurso'
+        : `HTTP error! status: ${response.status}`;
+      const error = new Error(errorMessage);
       error.status = response.status;
       throw error;
     }

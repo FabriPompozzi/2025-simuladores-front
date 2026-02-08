@@ -22,7 +22,12 @@ const Principal = () => {
         setExams(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error fetching exams:", err);
-        setError(err.message || "Error al cargar los exámenes");
+        // Mensaje específico para error 403
+        if (err.status === 403) {
+          setError("No está autorizado para ver estos exámenes");
+        } else {
+          setError(err.message || "Error al cargar los exámenes");
+        }
         setExams([]); // Ensure it's always an array
       } finally {
         setLoading(false);
