@@ -11,6 +11,10 @@ const QuestionCreator = ({ onAddQuestion }) => {
   // Estados adicionales para fill_in_blank
   const [respuestasCorrectas, setRespuestasCorrectas] = useState([""]);
   const [distractores, setDistractores] = useState([]);
+  
+  // Estados adicionales para matching
+  const [conceptos, setConceptos] = useState(["", ""]);
+  const [respuestasMatching, setRespuestasMatching] = useState(["", ""]);
 
   // Efecto para ajustar opciones cuando cambia el tipo de pregunta
   React.useEffect(() => {
@@ -20,6 +24,10 @@ const QuestionCreator = ({ onAddQuestion }) => {
     } else if (tipoPregunta === "fill_in_blank") {
       setRespuestasCorrectas([""]);
       setDistractores([]);
+      setCorrecta(0);
+    } else if (tipoPregunta === "matching") {
+      setConceptos(["", ""]);
+      setRespuestasMatching(["", ""]);
       setCorrecta(0);
     } else if (tipoPregunta === "multiple_choice" && opciones.length === 2 && opciones[0] === "Verdadero" && opciones[1] === "Falso") {
       // Si volvemos de true_false a multiple_choice, resetear opciones
@@ -142,6 +150,11 @@ const QuestionCreator = ({ onAddQuestion }) => {
       // Las primeras N opciones son las correctas en orden
       preguntaData.opciones = [...respuestasCorrectas, ...distractores];
       preguntaData.correcta = respuestasCorrectas.length; // Indica cuántas son correctas
+    } else if (tipoPregunta === "matching") {
+      // Para matching, combinar conceptos y respuestas en un solo array
+      // Primera mitad: conceptos, segunda mitad: respuestas
+      preguntaData.opciones = [...conceptos, ...respuestasMatching];
+      preguntaData.correcta = conceptos.length; // Indica cuántos son conceptos (el resto son respuestas)
     } else {
       preguntaData.opciones = [...opciones];
       preguntaData.correcta = correcta;
@@ -157,6 +170,9 @@ const QuestionCreator = ({ onAddQuestion }) => {
     } else if (tipoPregunta === "fill_in_blank") {
       setRespuestasCorrectas([""]);
       setDistractores([]);
+    } else if (tipoPregunta === "matching") {
+      setConceptos(["", ""]);
+      setRespuestasMatching(["", ""]);
     }
     setCorrecta(0);
     setError("");
@@ -197,6 +213,7 @@ const QuestionCreator = ({ onAddQuestion }) => {
             <option value="multiple_choice">Opción Múltiple</option>
             <option value="true_false">Verdadero / Falso</option>
             <option value="fill_in_blank">Completar Espacios</option>
+            <option value="matching">Unir con Flechas (Matching)</option>
           </select>
         </div>
 
@@ -501,7 +518,201 @@ const QuestionCreator = ({ onAddQuestion }) => {
           </>
         )}
 
-        {tipoPregunta !== "fill_in_blank" && (
+        {tipoPregunta === "matching" && (
+          <>
+            <div className="mb-3">
+              <div className="alert alert-info">
+                <i className="fas fa-info-circle me-2"></i>
+                <strong>Instrucciones:</strong> Agrega los conceptos en la columna izquierda y sus respuestas correspondientes en la columna derecha.
+                Los estudiantes deberán unir cada concepto con su respuesta correcta.
+                <br/>
+                <small>Ejemplo: Concepto "Francia" → Respuesta "París"</small>
+              </div>
+            </div>
+            
+            <div className="row mb-4">
+              {/* Columna de Conceptos */}
+              <div className="col-md-6">
+                <label className="form-label d-flex align-items-center gap-2">
+                  <i className="fas fa-list-ul text-primary me-2"></i>
+                  Conceptos / Preguntas (Columna Izquierda)
+                </label>
+                <div className="exam-creator-options-list">
+                  {conceptos.map((concepto, i) => (
+                    <div key={i} className="exam-creator-option-item mb-2 d-flex gap-2 align-items-center">
+                      <span 
+                        className="badge bg-primary"
+                        style={{
+                          minWidth: '35px',
+                          height: '35px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {i + 1}
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder={`Concepto ${i + 1}`}
+                        value={concepto}
+                        onChange={(e) => {
+                          const nuevoValor = e.target.value;
+                          const valorTrim = nuevoValor.trim().toLowerCase();
+                          
+                          if (valorTrim) {
+                            const duplicado = conceptos.some((c, idx) => 
+                              idx !== i && c.trim().toLowerCase() === valorTrim
+                            );
+                            if (duplicado) {
+                              setError('Este concepto ya existe');
+                              setTimeout(() => setError(''), 3000);
+                              return;
+                            }
+                          }
+                          
+                          const nuevos = [...conceptos];
+                          nuevos[i] = nuevoValor;
+                          setConceptos(nuevos);
+                          setError('');
+                        }}
+                        style={{
+                          padding: '0.6rem 0.8rem',
+                          border: '2px solid #007bff',
+                          borderRadius: '6px',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                      {conceptos.length > 2 && (
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger btn-sm"
+                          onClick={() => {
+                            setConceptos(conceptos.filter((_, idx) => idx !== i));
+                            setRespuestasMatching(respuestasMatching.filter((_, idx) => idx !== i));
+                          }}
+                          title="Eliminar par"
+                          style={{ minWidth: '40px' }}
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {conceptos.length < 10 && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary btn-sm mt-2"
+                    onClick={() => {
+                      setConceptos([...conceptos, ""]);
+                      setRespuestasMatching([...respuestasMatching, ""]);
+                    }}
+                  >
+                    <i className="fas fa-plus me-2"></i>
+                    Agregar par concepto-respuesta
+                  </button>
+                )}
+              </div>
+              
+              {/* Columna de Respuestas */}
+              <div className="col-md-6">
+                <label className="form-label d-flex align-items-center gap-2">
+                  <i className="fas fa-arrow-right text-success me-2"></i>
+                  Respuestas Correctas (Columna Derecha)
+                </label>
+                <div className="exam-creator-options-list">
+                  {respuestasMatching.map((respuesta, i) => (
+                    <div key={i} className="exam-creator-option-item mb-2 d-flex gap-2 align-items-center">
+                      <span 
+                        className="badge bg-success"
+                        style={{
+                          minWidth: '35px',
+                          height: '35px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {String.fromCharCode(65 + i)}
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder={`Respuesta ${String.fromCharCode(65 + i)}`}
+                        value={respuesta}
+                        onChange={(e) => {
+                          const nuevoValor = e.target.value;
+                          const valorTrim = nuevoValor.trim().toLowerCase();
+                          
+                          if (valorTrim) {
+                            const duplicado = respuestasMatching.some((r, idx) => 
+                              idx !== i && r.trim().toLowerCase() === valorTrim
+                            );
+                            if (duplicado) {
+                              setError('Esta respuesta ya existe');
+                              setTimeout(() => setError(''), 3000);
+                              return;
+                            }
+                          }
+                          
+                          const nuevas = [...respuestasMatching];
+                          nuevas[i] = nuevoValor;
+                          setRespuestasMatching(nuevas);
+                          setError('');
+                        }}
+                        style={{
+                          padding: '0.6rem 0.8rem',
+                          border: '2px solid #28a745',
+                          borderRadius: '6px',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2" style={{ height: '38px' }}>
+                  {/* Espacio para mantener alineación con columna izquierda */}
+                </div>
+              </div>
+            </div>
+            
+            {/* Vista previa del matching */}
+            <div className="alert alert-secondary">
+              <strong><i className="fas fa-eye me-2"></i>Vista previa de los pares correctos:</strong>
+              <div className="mt-2">
+                {conceptos.map((concepto, i) => {
+                  const respuesta = respuestasMatching[i];
+                  if (!concepto.trim() || !respuesta.trim()) return null;
+                  
+                  return (
+                    <div key={i} className="mb-2 d-flex align-items-center gap-2">
+                      <span className="badge bg-primary" style={{ fontSize: '0.85rem', minWidth: '30px' }}>
+                        {i + 1}
+                      </span>
+                      <span style={{ fontSize: '0.9rem' }}>{concepto}</span>
+                      <i className="fas fa-arrow-right text-primary mx-1"></i>
+                      <span className="badge bg-success" style={{ fontSize: '0.85rem', minWidth: '30px' }}>
+                        {String.fromCharCode(65 + i)}
+                      </span>
+                      <span style={{ fontSize: '0.9rem' }}>{respuesta}</span>
+                    </div>
+                  );
+                })}
+                {conceptos.filter(c => c.trim()).length === 0 && (
+                  <small className="text-muted">Complete los campos para ver la vista previa</small>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {tipoPregunta !== "fill_in_blank" && tipoPregunta !== "matching" && (
           <div className="mb-4">
             <label className="form-label d-flex align-items-center gap-2">
               <i className="fas fa-check-circle text-muted"></i>

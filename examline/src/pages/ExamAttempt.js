@@ -20,6 +20,8 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
   const [submitting, setSubmitting] = useState(false);
   const [respuestas, setRespuestas] = useState({}); // { preguntaIndex: opcionIndex | opcionIndex[] }
   const [randomizedOptions, setRandomizedOptions] = useState({}); // { preguntaIndex: [{ texto, originalIndex }] }
+  const [randomizedMatchingAnswers, setRandomizedMatchingAnswers] = useState({}); // Para matching: { preguntaIndex: [{ texto, originalIndex }] }
+  const [selectedMatchingConcepts, setSelectedMatchingConcepts] = useState({}); // Para tracking de concepto seleccionado: { preguntaIndex: conceptoIndex | null }
   
   // Usar hooks personalizados
   const { modal, showModal, closeModal, setModalProcessing } = useModal();
@@ -130,7 +132,7 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
           // Preparar el body según el tipo de examen
           let body = {};
           if (exam.tipo === 'multiple_choice') {
-            // Convertir respuestas de fill_in_blank de índices randomizados a originales
+            // Convertir respuestas de fill_in_blank y matching de índices randomizados a originales
             const respuestasFinales = {};
             Object.keys(respuestas).forEach(preguntaIndex => {
               const pregunta = exam.preguntas[preguntaIndex];
@@ -140,6 +142,11 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                 // Convertir índices randomizados a índices originales
                 respuestasFinales[preguntaIndex] = respuesta.map(randomIndex => 
                   randomizedOptions[preguntaIndex][randomIndex].originalIndex
+                );
+              } else if (pregunta.tipo === 'matching' && Array.isArray(respuesta)) {
+                // Para matching, convertir índices de respuestas randomizadas a originales
+                respuestasFinales[preguntaIndex] = respuesta.map(randomizedAnswerIndex => 
+                  randomizedMatchingAnswers[preguntaIndex][randomizedAnswerIndex].originalIndex
                 );
               } else {
                 // Para otros tipos, mantener el índice (pero también convertir por si acaso)
@@ -239,9 +246,36 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
         // Randomizar opciones para cada pregunta
         if (examData.preguntas) {
           const randomized = {};
+          const randomizedMatching = {};
           examData.preguntas.forEach((pregunta, index) => {
-            if (pregunta.opciones && Array.isArray(pregunta.opciones)) {
-              // Crear array con índices originales
+            if (pregunta.tipo === 'matching' && pregunta.opciones && Array.isArray(pregunta.opciones)) {
+              // Para matching, solo randomizar las respuestas (segunda mitad del array)
+              const numConceptos = pregunta.correcta || 0;
+              const respuestas = pregunta.opciones.slice(numConceptos);
+              const respuestasConIndice = respuestas.map((texto, i) => ({
+                texto,
+                originalIndex: numConceptos + i // Índice original en el array completo
+              }));
+              // Randomizar usando Fisher-Yates shuffle
+              for (let i = respuestasConIndice.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [respuestasConIndice[i], respuestasConIndice[j]] = [respuestasConIndice[j], respuestasConIndice[i]];
+              }
+              randomizedMatching[index] = respuestasConIndice;
+            } else if (pregunta.tipo === 'fill_in_blank' && pregunta.opciones && Array.isArray(pregunta.opciones)) {
+              // Para fill_in_blank, randomizar todas las opciones (correctas + distractores juntas)
+              const opcionesConIndice = pregunta.opciones.map((texto, i) => ({
+                texto,
+                originalIndex: i
+              }));
+              // Randomizar usando Fisher-Yates shuffle
+              for (let i = opcionesConIndice.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [opcionesConIndice[i], opcionesConIndice[j]] = [opcionesConIndice[j], opcionesConIndice[i]];
+              }
+              randomized[index] = opcionesConIndice;
+            } else if (pregunta.opciones && Array.isArray(pregunta.opciones)) {
+              // Para otros tipos (multiple_choice, true_false), randomizar todas las opciones
               const opcionesConIndice = pregunta.opciones.map((texto, i) => ({
                 texto,
                 originalIndex: i
@@ -255,6 +289,7 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
             }
           });
           setRandomizedOptions(randomized);
+          setRandomizedMatchingAnswers(randomizedMatching);
         }
 
         // Redireccionar si es un examen de programación
@@ -463,6 +498,7 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
         <>
           <div className="exam-attempt-questions-grid">
             {exam.preguntas.map((p, i) => {
+              const isMatching = p.tipo === 'matching';
               const opcionesParaMostrar = randomizedOptions[i] || p.opciones?.map((texto, idx) => ({ texto, originalIndex: idx })) || [];
               const isFillInBlank = p.tipo === 'fill_in_blank';
               const respuestaActual = respuestas[i];
@@ -476,15 +512,15 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                       <span 
                         className="badge"
                         style={{
-                          backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : '#007bff',
+                          backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : p.tipo === 'matching' ? '#9c27b0' : '#007bff',
                           color: 'white',
                           padding: '0.35rem 0.65rem',
                           fontSize: '0.75rem',
                           borderRadius: '6px'
                         }}
                       >
-                        <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : 'fa-list-ul'} me-1`}></i>
-                        {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : 'Múltiple'}
+                        <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : p.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
+                        {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : p.tipo === 'matching' ? 'Unir' : 'Múltiple'}
                       </span>
                     </div>
                     <h5 className="exam-title mt-2">
@@ -493,17 +529,185 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                   </div>
                   <div className="exam-card-body">
                     <div className="exam-info">
-                      <h6 className="mb-3">
-                        <i className={`fas ${isFillInBlank ? 'fa-check-double' : 'fa-list-ul'} me-2`}></i>
-                        <span className="options-label">{isFillInBlank ? 'Selecciona las respuestas (en orden):' : 'Selecciona tu respuesta:'}</span>
-                      </h6>
-                      {isFillInBlank && (
-                        <div className="alert alert-info mb-3" style={{ fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}>
-                          <i className="fas fa-info-circle me-2"></i>
-                          Selecciona las opciones en el orden en que deben aparecer en los espacios en blanco
-                        </div>
-                      )}
-                      <div className="exam-options-list">
+                      {isMatching ? (
+                        <>
+                          <h6 className="mb-3">
+                            <i className="fas fa-arrows-alt-h me-2"></i>
+                            <span className="options-label">Une cada concepto con su respuesta haciendo clic:</span>
+                          </h6>
+                          <div className="alert alert-info mb-3" style={{ fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}>
+                            <i className="fas fa-info-circle me-2"></i>
+                            Haz clic en un concepto y luego en su respuesta para conectarlos. Haz clic nuevamente para cambiar.
+                          </div>
+                          
+                          {/* Obtener conceptos y respuestas randomizadas */}
+                          {(() => {
+                            const numConceptos = p.correcta || 0;
+                            const conceptos = p.opciones?.slice(0, numConceptos) || [];
+                            const respuestasRandomizadas = randomizedMatchingAnswers[i] || [];
+                            const respuestasEstudiante = Array.isArray(respuestaActual) ? respuestaActual : [];
+                            
+                            // Obtener el concepto seleccionado para esta pregunta
+                            const selectedConcept = selectedMatchingConcepts[i] ?? null;
+                            
+                            return (
+                              <div style={{ position: 'relative' }}>
+                                <div className="row">
+                                  {/* Columna izquierda: Conceptos */}
+                                  <div className="col-6">
+                                    <h6 className="text-muted mb-3"><i className="fas fa-list-ol me-2"></i>Conceptos</h6>
+                                    {conceptos.map((concepto, conceptoIdx) => {
+                                      const isSelected = selectedConcept === conceptoIdx;
+                                      const hasConnection = respuestasEstudiante[conceptoIdx] !== undefined && respuestasEstudiante[conceptoIdx] !== null;
+                                      
+                                      return (
+                                        <div
+                                          key={conceptoIdx}
+                                          id={`matching-${i}-concept-${conceptoIdx}`}
+                                          className={`matching-item ${isSelected ? 'selected' : ''} ${hasConnection ? 'connected' : ''}`}
+                                          onClick={() => {
+                                            if (selectedConcept === conceptoIdx) {
+                                              // Deseleccionar
+                                              setSelectedMatchingConcepts(prev => ({
+                                                ...prev,
+                                                [i]: null
+                                              }));
+                                            } else {
+                                              // Seleccionar concepto
+                                              setSelectedMatchingConcepts(prev => ({
+                                                ...prev,
+                                                [i]: conceptoIdx
+                                              }));
+                                            }
+                                          }}
+                                          style={{
+                                            padding: '0.75rem 1rem',
+                                            marginBottom: '0.75rem',
+                                            border: isSelected ? '2px solid #0d6efd' : hasConnection ? '2px solid #28a745' : '2px solid #dee2e6',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            backgroundColor: isSelected ? '#e7f1ff' : hasConnection ? '#d1f4e0' : 'white',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem'
+                                          }}
+                                        >
+                                          <span className="badge bg-primary" style={{ fontSize: '0.9rem', minWidth: '35px', padding: '0.5rem' }}>
+                                            {conceptoIdx + 1}
+                                          </span>
+                                          <span style={{ flex: 1, fontSize: '0.95rem' }}>{concepto}</span>
+                                          {hasConnection && <i className="fas fa-check text-success"></i>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  
+                                  {/* Columna derecha: Respuestas */}
+                                  <div className="col-6">
+                                    <h6 className="text-muted mb-3"><i className="fas fa-list me-2"></i>Respuestas</h6>
+                                    {respuestasRandomizadas.map((respuestaObj, respuestaIdx) => {
+                                      const isTargetOfSelected = selectedConcept !== null && respuestasEstudiante[selectedConcept] === respuestaIdx;
+                                      const isConnectedToOther = respuestasEstudiante.indexOf(respuestaIdx) !== -1;
+                                      
+                                      return (
+                                        <div
+                                          key={respuestaIdx}
+                                          id={`matching-${i}-answer-${respuestaIdx}`}
+                                          className={`matching-item ${isTargetOfSelected ? 'selected' : ''} ${isConnectedToOther ? 'connected' : ''}`}
+                                          onClick={() => {
+                                            if (selectedConcept !== null) {
+                                              // Conectar el concepto seleccionado con esta respuesta
+                                              setRespuestas(prev => {
+                                                const current = Array.isArray(prev[i]) ? [...prev[i]] : [];
+                                                // Asegurarse de que el array tenga el tamaño correcto
+                                                while (current.length < numConceptos) {
+                                                  current.push(null);
+                                                }
+                                                // Asignar la respuesta al concepto actual
+                                                current[selectedConcept] = respuestaIdx;
+                                                return {
+                                                  ...prev,
+                                                  [i]: current
+                                                };
+                                              });
+                                              // Deseleccionar después de conectar
+                                              setSelectedMatchingConcepts(prev => ({
+                                                ...prev,
+                                                [i]: null
+                                              }));
+                                            }
+                                          }}
+                                          style={{
+                                            padding: '0.75rem 1rem',
+                                            marginBottom: '0.75rem',
+                                            border: isTargetOfSelected ? '2px solid #0d6efd' : isConnectedToOther ? '2px solid #28a745' : '2px solid #dee2e6',
+                                            borderRadius: '8px',
+                                            cursor: selectedConcept !== null ? 'pointer' : 'default',
+                                            backgroundColor: isTargetOfSelected ? '#e7f1ff' : isConnectedToOther ? '#d1f4e0' : 'white',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            opacity: selectedConcept !== null ? 1 : (isConnectedToOther ? 1 : 0.9)
+                                          }}
+                                        >
+                                          <span className="badge bg-success" style={{ fontSize: '0.9rem', minWidth: '35px', padding: '0.5rem' }}>
+                                            {String.fromCharCode(65 + respuestaIdx)}
+                                          </span>
+                                          <span style={{ flex: 1, fontSize: '0.95rem' }}>{respuestaObj.texto}</span>
+                                          {isConnectedToOther && (
+                                            <span className="badge bg-primary" style={{ fontSize: '0.75rem' }}>
+                                              {respuestasEstudiante.indexOf(respuestaIdx) + 1}
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                                
+                                {/* Resumen de conexiones */}
+                                {respuestasEstudiante.some(r => r !== null && r !== undefined) && (
+                                  <div className="mt-3 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                                    <h6 className="mb-2" style={{ fontSize: '0.9rem' }}>
+                                      <i className="fas fa-link me-2"></i>Tus conexiones:
+                                    </h6>
+                                    <div className="d-flex flex-wrap gap-2">
+                                      {conceptos.map((concepto, conceptoIdx) => {
+                                        const respuestaIdx = respuestasEstudiante[conceptoIdx];
+                                        if (respuestaIdx === null || respuestaIdx === undefined) return null;
+                                        const respuesta = respuestasRandomizadas[respuestaIdx];
+                                        if (!respuesta) return null;
+                                        
+                                        return (
+                                          <div key={conceptoIdx} style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem', backgroundColor: 'white', borderRadius: '6px', border: '1px solid #dee2e6' }}>
+                                            <span className="badge bg-primary me-1" style={{ fontSize: '0.75rem' }}>{conceptoIdx + 1}</span>
+                                            <i className="fas fa-arrow-right text-muted mx-1" style={{ fontSize: '0.7rem' }}></i>
+                                            <span className="badge bg-success me-1" style={{ fontSize: '0.75rem' }}>{String.fromCharCode(65 + respuestaIdx)}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        <>
+                          <h6 className="mb-3">
+                            <i className={`fas ${isFillInBlank ? 'fa-check-double' : 'fa-list-ul'} me-2`}></i>
+                            <span className="options-label">{isFillInBlank ? 'Selecciona las respuestas (en orden):' : 'Selecciona tu respuesta:'}</span>
+                          </h6>
+                          {isFillInBlank && (
+                            <div className="alert alert-info mb-3" style={{ fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}>
+                              <i className="fas fa-info-circle me-2"></i>
+                              Selecciona las opciones en el orden en que deben aparecer en los espacios en blanco
+                            </div>
+                          )}
+                          <div className="exam-options-list">
                         {opcionesParaMostrar.map((opcion, j) => {
                           const isSelected = isFillInBlank 
                             ? Array.isArray(respuestaActual) && respuestaActual.includes(j)
@@ -604,6 +808,8 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                           </div>
                         );})}
                       </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

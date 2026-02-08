@@ -476,15 +476,15 @@ const QuestionBank = () => {
                         <span 
                           className="badge"
                           style={{
-                            backgroundColor: question.tipo === 'true_false' ? '#28a745' : question.tipo === 'fill_in_blank' ? '#ffc107' : '#007bff',
+                            backgroundColor: question.tipo === 'true_false' ? '#28a745' : question.tipo === 'fill_in_blank' ? '#ffc107' : question.tipo === 'matching' ? '#9c27b0' : '#007bff',
                             color: 'white',
                             padding: '0.35rem 0.65rem',
                             fontSize: '0.75rem',
                             borderRadius: '6px'
                           }}
                         >
-                          <i className={`fas ${question.tipo === 'true_false' ? 'fa-check-double' : question.tipo === 'fill_in_blank' ? 'fa-fill-drip' : 'fa-list-ul'} me-1`}></i>
-                          {question.tipo === 'true_false' ? 'Verdadero/Falso' : question.tipo === 'fill_in_blank' ? 'Completar' : 'Opción Múltiple'}
+                          <i className={`fas ${question.tipo === 'true_false' ? 'fa-check-double' : question.tipo === 'fill_in_blank' ? 'fa-fill-drip' : question.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
+                          {question.tipo === 'true_false' ? 'Verdadero/Falso' : question.tipo === 'fill_in_blank' ? 'Completar' : question.tipo === 'matching' ? 'Unir con Flechas' : 'Opción Múltiple'}
                         </span>
                       </div>
                       {editingId !== question.id ? (
@@ -727,9 +727,28 @@ const QuestionBank = () => {
                           </div>
                         )}
                         <div className="mb-2">
-                          <strong className="text-muted">{question.tipo === 'fill_in_blank' ? 'Respuestas:' : 'Opciones:'}</strong>
+                          <strong className="text-muted">{question.tipo === 'fill_in_blank' ? 'Respuestas:' : question.tipo === 'matching' ? 'Pares correctos:' : 'Opciones:'}</strong>
                         </div>
-                        {question.tipo === 'fill_in_blank' ? (
+                        {question.tipo === 'matching' ? (
+                          <div className="list-group mb-3">
+                            {Array.isArray(question.opciones) && question.opciones.slice(0, question.correcta).map((concepto, i) => {
+                              const respuesta = question.opciones[question.correcta + i];
+                              return (
+                                <div key={i} className="list-group-item d-flex align-items-center gap-2">
+                                  <span className="badge bg-primary" style={{ fontSize: '0.85rem', minWidth: '30px' }}>
+                                    {i + 1}
+                                  </span>
+                                  <span style={{ fontSize: '0.9rem' }}>{concepto}</span>
+                                  <i className="fas fa-arrow-right text-primary mx-1"></i>
+                                  <span className="badge bg-success" style={{ fontSize: '0.85rem', minWidth: '30px' }}>
+                                    {String.fromCharCode(65 + i)}
+                                  </span>
+                                  <span style={{ fontSize: '0.9rem' }}>{respuesta}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : question.tipo === 'fill_in_blank' ? (
                           <>
                             <div className="mb-2">
                               <small className="text-success fw-bold"><i className="fas fa-check-circle me-1"></i>Respuestas correctas (en orden):</small>

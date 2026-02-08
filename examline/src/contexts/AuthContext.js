@@ -24,23 +24,22 @@ export const AuthProvider = ({ children }) => {
       if (savedToken && savedUser) {
         try {
           const userData = JSON.parse(savedUser);
-          setToken(savedToken);
-          setUser(userData);
           
           // Validate token by checking if it's expired
           const tokenPayload = JSON.parse(atob(savedToken.split('.')[1]));
           const now = Date.now() / 1000;
           
           if (tokenPayload.exp && tokenPayload.exp < now) {
-            // Token expired, try to refresh
-            const refreshSuccess = await doRefreshToken(savedToken);
-            if (!refreshSuccess) {
-              // Failed to refresh, logout
-              setToken(null);
-              setUser(null);
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
-            }
+            // Token expired, clear everything
+            console.log('Token expirado detectado al cargar, limpiando...');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setToken(null);
+            setUser(null);
+          } else {
+            // Token still valid
+            setToken(savedToken);
+            setUser(userData);
           }
         } catch (error) {
           console.error('Error parsing saved user data:', error);

@@ -314,15 +314,15 @@ const ExamView = ({ examId: propExamId, onBack }) => {
                           <span 
                             className="badge"
                             style={{
-                              backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : '#007bff',
+                              backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : p.tipo === 'matching' ? '#9c27b0' : '#007bff',
                               color: 'white',
                               padding: '0.35rem 0.65rem',
                               fontSize: '0.75rem',
                               borderRadius: '6px'
                             }}
                           >
-                            <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : 'fa-list-ul'} me-1`}></i>
-                            {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : 'Múltiple'}
+                            <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : p.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
+                            {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : p.tipo === 'matching' ? 'Unir con Flechas' : 'Múltiple'}
                           </span>
                         </div>
                         <span className="exam-badge">
@@ -335,7 +335,24 @@ const ExamView = ({ examId: propExamId, onBack }) => {
                           <strong>{p.texto || "Sin texto"}</strong>
                         </div>
                         <div className="exam-info">
-                          {p.tipo === 'fill_in_blank' ? (
+                          {p.tipo === 'matching' ? (
+                            p.opciones?.slice(0, p.correcta).map((concepto, j) => {
+                              const respuesta = p.opciones[p.correcta + j];
+                              return (
+                                <div key={j} className="exam-info-item option-item d-flex align-items-center gap-2 mb-2">
+                                  <span className="badge bg-primary" style={{ fontSize: '0.75rem', minWidth: '30px' }}>
+                                    {j + 1}
+                                  </span>
+                                  <span style={{ fontSize: '0.9rem' }}>{concepto || "Concepto vacío"}</span>
+                                  <i className="fas fa-arrow-right text-primary"></i>
+                                  <span className="badge bg-success" style={{ fontSize: '0.75rem', minWidth: '30px' }}>
+                                    {String.fromCharCode(65 + j)}
+                                  </span>
+                                  <span style={{ fontSize: '0.9rem' }}>{respuesta || "Respuesta vacía"}</span>
+                                </div>
+                              );
+                            })
+                          ) : p.tipo === 'fill_in_blank' ? (
                             <>
                               <div className="mb-2">
                                 <small className="text-success fw-bold"><i className="fas fa-check-circle me-1"></i>Respuestas correctas (en orden):</small>

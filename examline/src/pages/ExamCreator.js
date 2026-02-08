@@ -501,15 +501,15 @@ const ExamCreator = () => {
                         <span 
                           className="badge"
                           style={{
-                            backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : '#007bff',
+                            backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : p.tipo === 'matching' ? '#9c27b0' : '#007bff',
                             color: 'white',
                             padding: '0.25rem 0.5rem',
                             fontSize: '0.7rem',
                             borderRadius: '4px'
                           }}
                         >
-                          <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : 'fa-list-ul'} me-1`}></i>
-                          {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : 'Múltiple'}
+                          <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : p.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
+                          {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : p.tipo === 'matching' ? 'Unir' : 'Múltiple'}
                         </span>
                         <span className="exam-badge">
                           <i className="fas fa-check-circle"></i>
@@ -530,7 +530,24 @@ const ExamCreator = () => {
                         <strong>{p.texto}</strong>
                       </div>
                       <div className="exam-info">
-                        {p.tipo === 'fill_in_blank' ? (
+                        {p.tipo === 'matching' ? (
+                          p.opciones.slice(0, p.correcta).map((concepto, i) => {
+                            const respuesta = p.opciones[p.correcta + i];
+                            return (
+                              <div key={i} className="exam-info-item d-flex align-items-center gap-2 mb-2">
+                                <span className="badge bg-primary" style={{ fontSize: '0.7rem', minWidth: '25px' }}>
+                                  {i + 1}
+                                </span>
+                                <span style={{ fontSize: '0.85rem' }}>{concepto}</span>
+                                <i className="fas fa-arrow-right text-primary" style={{ fontSize: '0.7rem' }}></i>
+                                <span className="badge bg-success" style={{ fontSize: '0.7rem', minWidth: '25px' }}>
+                                  {String.fromCharCode(65 + i)}
+                                </span>
+                                <span style={{ fontSize: '0.85rem' }}>{respuesta}</span>
+                              </div>
+                            );
+                          })
+                        ) : p.tipo === 'fill_in_blank' ? (
                           <>
                             <div className="mb-2">
                               <small className="text-success fw-bold"><i className="fas fa-check-circle me-1"></i>Respuestas correctas (en orden):</small>
