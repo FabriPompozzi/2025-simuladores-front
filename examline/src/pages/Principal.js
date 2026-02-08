@@ -217,6 +217,12 @@ const Principal = () => {
                             <span>Preguntas: {exam.preguntas?.length || 0}</span>
                           </div>
                         )}
+                        {exam.tipo !== 'programming' && (
+                          <div className="exam-info-item">
+                            <i className="fas fa-random"></i>
+                            <span>Orden: {exam.ordenAleatorio ? 'Aleatorio' : 'Fijo'}</span>
+                          </div>
+                        )}
                       </div>
                       <button
                         className="modern-btn modern-btn-primary w-100 view-exam-btn"

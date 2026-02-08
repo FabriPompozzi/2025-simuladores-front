@@ -113,6 +113,17 @@ const ExamView = ({ examId: propExamId, onBack }) => {
                 </span>
               </div>
             </div>
+            {exam.tipo !== 'programming' && (
+              <div className="col-md-6 mb-3">
+                <div className="exam-info-item">
+                  <i className="fas fa-random text-info me-2"></i>
+                  <strong>Orden de preguntas:</strong> 
+                  <span className={`ms-2 badge ${exam.ordenAleatorio ? 'bg-info' : 'bg-secondary'}`}>
+                    {exam.ordenAleatorio ? 'Aleatorio' : 'Fijo'}
+                  </span>
+                </div>
+              </div>
+            )}
             {exam.tipo === 'programming' && (
               <>
                 <div className="col-md-6 mb-3">
