@@ -14,6 +14,7 @@ const ExamCreator = () => {
   const { modal, showModal, closeModal } = useModal();
   const [titulo, setTitulo] = useState("");
   const [tipoExamen, setTipoExamen] = useState("multiple_choice"); // "multiple_choice" | "programming"
+  const [ordenAleatorio, setOrdenAleatorio] = useState(false); // Orden aleatorio de preguntas
   
   // Estados para exámenes de multiple choice
   const [preguntas, setPreguntas] = useState([]);
@@ -69,7 +70,8 @@ const ExamCreator = () => {
     try {
       const examData = {
         titulo,
-        tipo: tipoExamen
+        tipo: tipoExamen,
+        ordenAleatorio
       };
 
       // Agregar datos específicos según el tipo
@@ -190,7 +192,7 @@ const ExamCreator = () => {
               />
             </div>
             
-            <div className="mb-0">
+            <div className="mb-3">
               <label className="form-label d-flex align-items-center gap-2">
                 <i className="fas fa-clipboard-list text-muted"></i>
                 Tipo de Examen
@@ -209,6 +211,30 @@ const ExamCreator = () => {
                 <option value="multiple_choice">Preguntas</option>
                 <option value="programming">Programación</option>
               </select>
+            </div>
+            
+            <div className="mb-0">
+              <label className="form-label d-flex align-items-center gap-2">
+                <i className="fas fa-random text-muted"></i>
+                Orden Aleatorio de Preguntas
+              </label>
+              <div className="form-check form-switch mt-2">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="ordenAleatorioSwitch"
+                  checked={ordenAleatorio}
+                  onChange={(e) => setOrdenAleatorio(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="ordenAleatorioSwitch">
+                  {ordenAleatorio ? "Las preguntas aparecerán en orden aleatorio para cada estudiante" : "Las preguntas aparecerán en el orden definido"}
+                </label>
+              </div>
+              <small className="form-text text-muted">
+                {ordenAleatorio 
+                  ? "✓ Cada estudiante verá las preguntas en un orden diferente"
+                  : "Las preguntas siempre aparecerán en el mismo orden"}
+              </small>
             </div>
           </div>
         </div>

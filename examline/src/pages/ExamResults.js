@@ -1069,7 +1069,7 @@ const ExamResults = ({ attemptId: propAttemptId, onBack }) => {
                           </h6>
                           <div className="exam-results-options-list">
                             {(() => {
-                              const studentAnswer = attempt.respuestas?.[index];
+                              const studentAnswer = attempt.respuestas?.[question.id]; // Usar ID de pregunta, no índice
                               const isFillInBlank = question.tipo === 'fill_in_blank';
                               const isMatching = question.tipo === 'matching';
                               
@@ -1140,6 +1140,12 @@ const ExamResults = ({ attemptId: propAttemptId, onBack }) => {
                                             ? question.opciones?.[studentAnswerIdx]
                                             : '(sin respuesta)';
                                           
+                                          // Calcular la letra para mostrar (A, B, C...)
+                                          let letterToShow = '?';
+                                          if (studentAnswerIdx !== null && studentAnswerIdx !== undefined && studentAnswerIdx >= numConceptos) {
+                                            letterToShow = String.fromCharCode(65 + (studentAnswerIdx - numConceptos));
+                                          }
+                                          
                                           return (
                                             <div 
                                               key={i} 
@@ -1153,7 +1159,7 @@ const ExamResults = ({ attemptId: propAttemptId, onBack }) => {
                                               <span className="fw-bold">{concepto}</span>
                                               <i className="fas fa-arrow-right text-muted mx-1"></i>
                                               <span className={`badge ${isCorrect ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '0.8rem', minWidth: '30px' }}>
-                                                {studentAnswerIdx !== null && studentAnswerIdx !== undefined ? String.fromCharCode(65 + (studentAnswerIdx - numConceptos)) : '?'}
+                                                {letterToShow}
                                               </span>
                                               <span className={`fw-bold ${isCorrect ? 'text-success' : 'text-danger'}`}>
                                                 {studentAnswerText}

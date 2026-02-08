@@ -18,7 +18,7 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [respuestas, setRespuestas] = useState({}); // { preguntaIndex: opcionIndex | opcionIndex[] }
+  const [respuestas, setRespuestas] = useState({}); // { preguntaId: opcionIndex | opcionIndex[] } - Usar ID no índice por randomización
   const [randomizedOptions, setRandomizedOptions] = useState({}); // { preguntaIndex: [{ texto, originalIndex }] }
   const [randomizedMatchingAnswers, setRandomizedMatchingAnswers] = useState({}); // Para matching: { preguntaIndex: [{ texto, originalIndex }] }
   const [selectedMatchingConcepts, setSelectedMatchingConcepts] = useState({}); // Para tracking de concepto seleccionado: { preguntaIndex: conceptoIndex | null }
@@ -132,28 +132,33 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
           // Preparar el body según el tipo de examen
           let body = {};
           if (exam.tipo === 'multiple_choice') {
-            // Convertir respuestas de fill_in_blank y matching de índices randomizados a originales
+            // Convertir respuestas: ya vienen con preguntaId como key
+            // Solo necesitamos convertir los valores de índices randomizados a originales
             const respuestasFinales = {};
-            Object.keys(respuestas).forEach(preguntaIndex => {
+            Object.keys(respuestas).forEach(preguntaId => {
+              // Encontrar la pregunta por su ID
+              const preguntaIndex = exam.preguntas.findIndex(p => p.id === parseInt(preguntaId));
+              if (preguntaIndex === -1) return; // Pregunta no encontrada
+              
               const pregunta = exam.preguntas[preguntaIndex];
-              const respuesta = respuestas[preguntaIndex];
+              const respuesta = respuestas[preguntaId];
               
               if (pregunta.tipo === 'fill_in_blank' && Array.isArray(respuesta)) {
                 // Convertir índices randomizados a índices originales
-                respuestasFinales[preguntaIndex] = respuesta.map(randomIndex => 
+                respuestasFinales[preguntaId] = respuesta.map(randomIndex => 
                   randomizedOptions[preguntaIndex][randomIndex].originalIndex
                 );
               } else if (pregunta.tipo === 'matching' && Array.isArray(respuesta)) {
                 // Para matching, convertir índices de respuestas randomizadas a originales
-                respuestasFinales[preguntaIndex] = respuesta.map(randomizedAnswerIndex => 
+                respuestasFinales[preguntaId] = respuesta.map(randomizedAnswerIndex => 
                   randomizedMatchingAnswers[preguntaIndex][randomizedAnswerIndex].originalIndex
                 );
               } else {
                 // Para otros tipos, mantener el índice (pero también convertir por si acaso)
                 if (randomizedOptions[preguntaIndex]) {
-                  respuestasFinales[preguntaIndex] = randomizedOptions[preguntaIndex][respuesta].originalIndex;
+                  respuestasFinales[preguntaId] = randomizedOptions[preguntaIndex][respuesta].originalIndex;
                 } else {
-                  respuestasFinales[preguntaIndex] = respuesta;
+                  respuestasFinales[preguntaId] = respuesta;
                 }
               }
             });
@@ -239,15 +244,62 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
           }
         }
 
-        // Cargar examen para validaciones de seguridad
+        // PRIMERO: Crear o obtener intento existente (para tener el orden randomizado)
+        const attemptResponse = await fetch(`${API_BASE_URL}/exam-attempts/start`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            examId: parseInt(examId), 
+            examWindowId: windowId ? parseInt(windowId) : null 
+          })
+        });
+
+        if (!attemptResponse.ok) {
+          const errorData = await attemptResponse.json();
+          setError(errorData.error || 'Error creando intento de examen');
+          setLoading(false);
+          return;
+        }
+
+        const attemptData = await attemptResponse.json();
+        
+        if (attemptData.estado === 'finalizado') {
+          setError('Ya has completado este examen');
+          setLoading(false);
+          return;
+        }
+
+        // SEGUNDO: Cargar examen con las preguntas
         const examData = await getExamById(examId, windowId);
+
+        // TERCERO: Aplicar orden de preguntas ANTES de setear el estado (evita flash)
+        let preguntasAMostrar = examData.preguntas;
+        
+        // Si el intento tiene un orden guardado (randomizado en el backend), usarlo
+        if (attemptData.ordenPreguntas && Array.isArray(attemptData.ordenPreguntas)) {
+          // Ordenar preguntas según el orden guardado en el intento
+          const ordenMap = new Map(examData.preguntas.map(p => [p.id, p]));
+          preguntasAMostrar = attemptData.ordenPreguntas
+            .map(id => ordenMap.get(id))
+            .filter(p => p !== undefined); // Filtrar cualquier ID inválido
+        }
+        // Si no hay orden guardado, mantener el orden original de la BD
+        
+        // Actualizar el examen con el orden correcto
+        examData.preguntas = preguntasAMostrar;
+
+        // CUARTO: Setear estados (ya con el orden correcto)
+        setAttempt(attemptData);
         setExam(examData);
 
         // Randomizar opciones para cada pregunta
-        if (examData.preguntas) {
+        if (preguntasAMostrar) {
           const randomized = {};
           const randomizedMatching = {};
-          examData.preguntas.forEach((pregunta, index) => {
+          preguntasAMostrar.forEach((pregunta, index) => {
             if (pregunta.tipo === 'matching' && pregunta.opciones && Array.isArray(pregunta.opciones)) {
               // Para matching, solo randomizar las respuestas (segunda mitad del array)
               const numConceptos = pregunta.correcta || 0;
@@ -298,32 +350,6 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
           if (windowId) params.append('windowId', windowId);
           navigate(`/programming-exam/${examId}?${params.toString()}`);
           return;
-        }
-
-        // Crear o obtener intento existente
-        const attemptResponse = await fetch(`${API_BASE_URL}/exam-attempts/start`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ 
-            examId: parseInt(examId), 
-            examWindowId: windowId ? parseInt(windowId) : null 
-          })
-        });
-
-        if (attemptResponse.ok) {
-          const attemptData = await attemptResponse.json();
-          setAttempt(attemptData);
-          
-          if (attemptData.estado === 'finalizado') {
-            setError('Ya has completado este examen');
-            return;
-          }
-        } else {
-          const errorData = await attemptResponse.json();
-          setError(errorData.error || 'Error creando intento de examen');
         }
 
         setError(null);
@@ -501,7 +527,7 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
               const isMatching = p.tipo === 'matching';
               const opcionesParaMostrar = randomizedOptions[i] || p.opciones?.map((texto, idx) => ({ texto, originalIndex: idx })) || [];
               const isFillInBlank = p.tipo === 'fill_in_blank';
-              const respuestaActual = respuestas[i];
+              const respuestaActual = respuestas[p.id]; // Usar ID de pregunta, no índice
               
               return (
               <div key={i} className="exam-attempt-question-card">
@@ -548,7 +574,7 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                             const respuestasEstudiante = Array.isArray(respuestaActual) ? respuestaActual : [];
                             
                             // Obtener el concepto seleccionado para esta pregunta
-                            const selectedConcept = selectedMatchingConcepts[i] ?? null;
+                            const selectedConcept = selectedMatchingConcepts[p.id] ?? null;
                             
                             return (
                               <div style={{ position: 'relative' }}>
@@ -570,13 +596,13 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                                               // Deseleccionar
                                               setSelectedMatchingConcepts(prev => ({
                                                 ...prev,
-                                                [i]: null
+                                                [p.id]: null
                                               }));
                                             } else {
                                               // Seleccionar concepto
                                               setSelectedMatchingConcepts(prev => ({
                                                 ...prev,
-                                                [i]: conceptoIdx
+                                                [p.id]: conceptoIdx
                                               }));
                                             }
                                           }}
@@ -619,7 +645,7 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                                             if (selectedConcept !== null) {
                                               // Conectar el concepto seleccionado con esta respuesta
                                               setRespuestas(prev => {
-                                                const current = Array.isArray(prev[i]) ? [...prev[i]] : [];
+                                                const current = Array.isArray(prev[p.id]) ? [...prev[p.id]] : [];
                                                 // Asegurarse de que el array tenga el tamaño correcto
                                                 while (current.length < numConceptos) {
                                                   current.push(null);
@@ -628,13 +654,13 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                                                 current[selectedConcept] = respuestaIdx;
                                                 return {
                                                   ...prev,
-                                                  [i]: current
+                                                  [p.id]: current
                                                 };
                                               });
                                               // Deseleccionar después de conectar
                                               setSelectedMatchingConcepts(prev => ({
                                                 ...prev,
-                                                [i]: null
+                                                [p.id]: null
                                               }));
                                             }
                                           }}
@@ -723,25 +749,25 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                             onClick={() => {
                               if (isFillInBlank) {
                                 setRespuestas(prev => {
-                                  const current = Array.isArray(prev[i]) ? prev[i] : [];
+                                  const current = Array.isArray(prev[p.id]) ? prev[p.id] : [];
                                   if (current.includes(j)) {
                                     // Deseleccionar
                                     return {
                                       ...prev,
-                                      [i]: current.filter(idx => idx !== j)
+                                      [p.id]: current.filter(idx => idx !== j)
                                     };
                                   } else {
                                     // Seleccionar (agregar al final)
                                     return {
                                       ...prev,
-                                      [i]: [...current, j]
+                                      [p.id]: [...current, j]
                                     };
                                   }
                                 });
                               } else {
                                 setRespuestas(prev => ({
                                   ...prev,
-                                  [i]: j
+                                  [p.id]: j
                                 }));
                               }
                             }}
