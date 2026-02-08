@@ -1092,16 +1092,11 @@ const ExamResults = ({ attemptId: propAttemptId, onBack }) => {
                                   <>
                                     {/* Resultado general */}
                                     <div className={`alert ${isFullyCorrect ? 'alert-success' : studentAnswers.length > 0 ? 'alert-danger' : 'alert-warning'} mb-3`}>
-                                      <div className="d-flex align-items-center justify-content-between">
-                                        <div>
-                                          <i className={`fas ${isFullyCorrect ? 'fa-check-circle' : studentAnswers.length > 0 ? 'fa-times-circle' : 'fa-exclamation-triangle'} me-2`}></i>
-                                          <strong>
-                                            {isFullyCorrect ? '¡Respuesta correcta!' : studentAnswers.length > 0 ? 'Respuesta incorrecta' : 'No respondiste esta pregunta'}
-                                          </strong>
-                                        </div>
-                                        {isFullyCorrect && (
-                                          <span className="badge bg-success">+1 punto</span>
-                                        )}
+                                      <div>
+                                        <i className={`fas ${isFullyCorrect ? 'fa-check-circle' : studentAnswers.length > 0 ? 'fa-times-circle' : 'fa-exclamation-triangle'} me-2`}></i>
+                                        <strong>
+                                          {isFullyCorrect ? '¡Respuesta correcta!' : studentAnswers.length > 0 ? 'Respuesta incorrecta' : 'No respondiste esta pregunta'}
+                                        </strong>
                                       </div>
                                     </div>
                                     
@@ -1190,16 +1185,11 @@ const ExamResults = ({ attemptId: propAttemptId, onBack }) => {
                                   <>
                                     {/* Resultado general */}
                                     <div className={`alert ${isFullyCorrect ? 'alert-success' : studentAnswers.length > 0 ? 'alert-danger' : 'alert-warning'} mb-3`}>
-                                      <div className="d-flex align-items-center justify-content-between">
-                                        <div>
-                                          <i className={`fas ${isFullyCorrect ? 'fa-check-circle' : studentAnswers.length > 0 ? 'fa-times-circle' : 'fa-exclamation-triangle'} me-2`}></i>
-                                          <strong>
-                                            {isFullyCorrect ? '¡Respuesta correcta!' : studentAnswers.length > 0 ? 'Respuesta incorrecta' : 'No respondiste esta pregunta'}
-                                          </strong>
-                                        </div>
-                                        {isFullyCorrect && (
-                                          <span className="badge bg-success">+1 punto</span>
-                                        )}
+                                      <div>
+                                        <i className={`fas ${isFullyCorrect ? 'fa-check-circle' : studentAnswers.length > 0 ? 'fa-times-circle' : 'fa-exclamation-triangle'} me-2`}></i>
+                                        <strong>
+                                          {isFullyCorrect ? '¡Respuesta correcta!' : studentAnswers.length > 0 ? 'Respuesta incorrecta' : 'No respondiste esta pregunta'}
+                                        </strong>
                                       </div>
                                     </div>
                                     
