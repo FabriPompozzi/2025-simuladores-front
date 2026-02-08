@@ -1041,8 +1041,7 @@ const ExamResults = ({ attemptId: propAttemptId, onBack }) => {
                   <div key={index} className="exam-results-question-card">
                     <div className="exam-card fade-in-up" style={{animationDelay: `${index * 0.1}s`}}>
                       <div className="exam-card-header">
-                        <div className="d-flex align-items-center gap-2 mb-2">
-                          <span className="badge badge-primary">{index + 1}</span>
+                        <div className="d-flex align-items-center gap-2 mb-3">
                           <span 
                             className="badge"
                             style={{
@@ -1056,8 +1055,9 @@ const ExamResults = ({ attemptId: propAttemptId, onBack }) => {
                             <i className={`fas ${question.tipo === 'true_false' ? 'fa-check-double' : question.tipo === 'fill_in_blank' ? 'fa-fill-drip' : question.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
                             {question.tipo === 'true_false' ? 'V/F' : question.tipo === 'fill_in_blank' ? 'Completar' : question.tipo === 'matching' ? 'Unir' : 'Múltiple'}
                           </span>
+                          <span className="badge badge-primary">{index + 1}</span>
                         </div>
-                        <h5 className="exam-title">
+                        <h5 className="exam-title" style={{ marginTop: 0 }}>
                           <span className="question-text">{question.texto || "Sin texto"}</span>
                         </h5>
                       </div>
