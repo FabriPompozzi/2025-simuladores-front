@@ -14,6 +14,39 @@ const getAuthHeaders = () => {
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
+  // Si es 401 (no autorizado) o 403 y el error es por token expirado, limpiar sesión
+  if (response.status === 401 || response.status === 403) {
+    try {
+      const data = await response.json();
+      
+      // Si el error menciona token expirado, limpiar todo
+      if (data.error && (
+        data.error.toLowerCase().includes('token') || 
+        data.error.toLowerCase().includes('expired') ||
+        data.error.toLowerCase().includes('unauthorized')
+      )) {
+        console.log('Token expirado detectado en respuesta API, limpiando sesión...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Redirigir al login si no estamos ya ahí
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+      
+      const error = new Error(data.error || `HTTP error! status: ${response.status}`);
+      error.status = response.status;
+      error.code = data.code;
+      throw error;
+    } catch (parseError) {
+      // Si no se puede parsear el JSON, crear error genérico
+      const error = new Error(`HTTP error! status: ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
+  }
+  
   const data = await response.json();
   
   if (!response.ok) {

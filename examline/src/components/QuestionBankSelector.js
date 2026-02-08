@@ -77,6 +77,7 @@ const QuestionBankSelector = ({ show, onClose, onSelectQuestions }) => {
     const selectedQuestions = questions
       .filter(q => selectedIds.includes(q.id))
       .map(q => ({
+        tipo: q.tipo || "multiple_choice",
         texto: q.texto,
         opciones: q.opciones,
         correcta: q.correcta
@@ -221,10 +222,25 @@ const QuestionBankSelector = ({ show, onClose, onSelectQuestions }) => {
                           </div>
                           
                           <div className="flex-grow-1">
-                            <h6 className="mb-2">
-                              <i className="fas fa-question-circle me-2 text-primary"></i>
-                              {question.titulo || "Sin título"}
-                            </h6>
+                            <div className="d-flex align-items-center gap-2 mb-2">
+                              <h6 className="mb-0">
+                                <i className="fas fa-question-circle me-2 text-primary"></i>
+                                {question.titulo || "Sin título"}
+                              </h6>
+                              <span 
+                                className="badge"
+                                style={{
+                                  backgroundColor: question.tipo === 'true_false' ? '#28a745' : question.tipo === 'fill_in_blank' ? '#ffc107' : question.tipo === 'matching' ? '#9c27b0' : '#007bff',
+                                  color: 'white',
+                                  padding: '0.25rem 0.5rem',
+                                  fontSize: '0.7rem',
+                                  borderRadius: '4px'
+                                }}
+                              >
+                                <i className={`fas ${question.tipo === 'true_false' ? 'fa-check-double' : question.tipo === 'fill_in_blank' ? 'fa-fill-drip' : question.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
+                                {question.tipo === 'true_false' ? 'V/F' : question.tipo === 'fill_in_blank' ? 'Completar' : question.tipo === 'matching' ? 'Unir' : 'Múltiple'}
+                              </span>
+                            </div>
                             
                             <p className="mb-2" style={{ fontSize: '0.95rem' }}>
                               <strong>Pregunta:</strong> {question.texto}
@@ -255,20 +271,50 @@ const QuestionBankSelector = ({ show, onClose, onSelectQuestions }) => {
                             
                             <div className="mt-2">
                               <small className="text-muted">
-                                <strong>Opciones:</strong>
+                                <strong>{question.tipo === 'fill_in_blank' ? 'Respuestas correctas (en orden):' : question.tipo === 'matching' ? 'Pares correctos:' : 'Opciones:'}</strong>
                               </small>
-                              <ul className="list-unstyled mb-0 ms-3" style={{ fontSize: '0.85rem' }}>
-                                {Array.isArray(question.opciones) && question.opciones.map((opcion, i) => (
-                                  <li key={i} className="mb-1">
-                                    {i === question.correcta && (
-                                      <i className="fas fa-check-circle text-success me-1"></i>
-                                    )}
-                                    <span className={i === question.correcta ? "text-success fw-bold" : ""}>
-                                      {opcion}
-                                    </span>
-                                  </li>
-                                ))}
-                              </ul>
+                              {question.tipo === 'matching' ? (
+                                <div className="ms-3 mt-1" style={{ fontSize: '0.85rem' }}>
+                                  {Array.isArray(question.opciones) && question.opciones.slice(0, question.correcta).map((concepto, i) => {
+                                    const respuesta = question.opciones[question.correcta + i];
+                                    return (
+                                      <div key={i} className="d-flex align-items-center gap-2 mb-1">
+                                        <span className="badge bg-primary" style={{ fontSize: '0.7rem', minWidth: '25px' }}>
+                                          {i + 1}
+                                        </span>
+                                        <span style={{ fontSize: '0.85rem' }}>{concepto}</span>
+                                        <i className="fas fa-arrow-right text-primary" style={{ fontSize: '0.7rem' }}></i>
+                                        <span className="badge bg-success" style={{ fontSize: '0.7rem', minWidth: '25px' }}>
+                                          {String.fromCharCode(65 + i)}
+                                        </span>
+                                        <span style={{ fontSize: '0.85rem' }}>{respuesta}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : question.tipo === 'fill_in_blank' ? (
+                                <ul className="list-unstyled mb-0 ms-3" style={{ fontSize: '0.85rem' }}>
+                                  {Array.isArray(question.opciones) && question.opciones.slice(0, question.correcta).map((opcion, i) => (
+                                    <li key={i} className="mb-1">
+                                      <span className="badge bg-success me-2" style={{ fontSize: '0.7rem' }}>{i + 1}</span>
+                                      <span className="text-success fw-bold">{opcion}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <ul className="list-unstyled mb-0 ms-3" style={{ fontSize: '0.85rem' }}>
+                                  {Array.isArray(question.opciones) && question.opciones.map((opcion, i) => (
+                                    <li key={i} className="mb-1">
+                                      {i === question.correcta && (
+                                        <i className="fas fa-check-circle text-success me-1"></i>
+                                      )}
+                                      <span className={i === question.correcta ? "text-success fw-bold" : ""}>
+                                        {opcion}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </div>
                           </div>
                         </div>

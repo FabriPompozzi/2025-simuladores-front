@@ -14,6 +14,7 @@ const ExamCreator = () => {
   const { modal, showModal, closeModal } = useModal();
   const [titulo, setTitulo] = useState("");
   const [tipoExamen, setTipoExamen] = useState("multiple_choice"); // "multiple_choice" | "programming"
+  const [ordenAleatorio, setOrdenAleatorio] = useState(false); // Orden aleatorio de preguntas
   
   // Estados para exámenes de multiple choice
   const [preguntas, setPreguntas] = useState([]);
@@ -69,7 +70,8 @@ const ExamCreator = () => {
     try {
       const examData = {
         titulo,
-        tipo: tipoExamen
+        tipo: tipoExamen,
+        ordenAleatorio
       };
 
       // Agregar datos específicos según el tipo
@@ -190,7 +192,7 @@ const ExamCreator = () => {
               />
             </div>
             
-            <div className="mb-0">
+            <div className="mb-3">
               <label className="form-label d-flex align-items-center gap-2">
                 <i className="fas fa-clipboard-list text-muted"></i>
                 Tipo de Examen
@@ -206,9 +208,33 @@ const ExamCreator = () => {
                   fontSize: '1rem'
                 }}
               >
-                <option value="multiple_choice">Múltiple Choice</option>
+                <option value="multiple_choice">Preguntas</option>
                 <option value="programming">Programación</option>
               </select>
+            </div>
+            
+            <div className="mb-0">
+              <label className="form-label d-flex align-items-center gap-2">
+                <i className="fas fa-random text-muted"></i>
+                Orden Aleatorio de Preguntas
+              </label>
+              <div className="form-check form-switch mt-2">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="ordenAleatorioSwitch"
+                  checked={ordenAleatorio}
+                  onChange={(e) => setOrdenAleatorio(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="ordenAleatorioSwitch">
+                  {ordenAleatorio ? "Las preguntas aparecerán en orden aleatorio para cada estudiante" : "Las preguntas aparecerán en el orden definido"}
+                </label>
+              </div>
+              <small className="form-text text-muted">
+                {ordenAleatorio 
+                  ? "✓ Cada estudiante verá las preguntas en un orden diferente"
+                  : "Las preguntas siempre aparecerán en el mismo orden"}
+              </small>
             </div>
           </div>
         </div>
@@ -498,6 +524,19 @@ const ExamCreator = () => {
                         <h5 className="exam-title mb-0">
                           <span className="question-number">Pregunta {idx + 1}</span>
                         </h5>
+                        <span 
+                          className="badge"
+                          style={{
+                            backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : p.tipo === 'matching' ? '#9c27b0' : '#007bff',
+                            color: 'white',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.7rem',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : p.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
+                          {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : p.tipo === 'matching' ? 'Unir' : 'Múltiple'}
+                        </span>
                         <span className="exam-badge">
                           <i className="fas fa-check-circle"></i>
                           <span className="badge-text">Lista</span>
@@ -517,12 +556,56 @@ const ExamCreator = () => {
                         <strong>{p.texto}</strong>
                       </div>
                       <div className="exam-info">
-                        {p.opciones.map((o, i) => (
-                          <div key={i} className="exam-info-item">
-                            <i className={i === p.correcta ? "fas fa-check-circle text-success" : "fas fa-circle text-muted"}></i>
-                            <span className={i === p.correcta ? "fw-bold text-success" : ""}>{o}</span>
-                          </div>
-                        ))}
+                        {p.tipo === 'matching' ? (
+                          p.opciones.slice(0, p.correcta).map((concepto, i) => {
+                            const respuesta = p.opciones[p.correcta + i];
+                            return (
+                              <div key={i} className="exam-info-item d-flex align-items-center gap-2 mb-2">
+                                <span className="badge bg-primary" style={{ fontSize: '0.7rem', minWidth: '25px' }}>
+                                  {i + 1}
+                                </span>
+                                <span style={{ fontSize: '0.85rem' }}>{concepto}</span>
+                                <i className="fas fa-arrow-right text-primary" style={{ fontSize: '0.7rem' }}></i>
+                                <span className="badge bg-success" style={{ fontSize: '0.7rem', minWidth: '25px' }}>
+                                  {String.fromCharCode(65 + i)}
+                                </span>
+                                <span style={{ fontSize: '0.85rem' }}>{respuesta}</span>
+                              </div>
+                            );
+                          })
+                        ) : p.tipo === 'fill_in_blank' ? (
+                          <>
+                            <div className="mb-2">
+                              <small className="text-success fw-bold"><i className="fas fa-check-circle me-1"></i>Respuestas correctas (en orden):</small>
+                            </div>
+                            {p.opciones.slice(0, p.correcta).map((o, i) => (
+                              <div key={i} className="exam-info-item">
+                                <span className="badge bg-success me-2" style={{ fontSize: '0.7rem' }}>{i + 1}</span>
+                                <span className="fw-bold text-success">{o}</span>
+                              </div>
+                            ))}
+                            {p.opciones.length > p.correcta && (
+                              <>
+                                <div className="mt-2 mb-2">
+                                  <small className="text-danger fw-bold"><i className="fas fa-times-circle me-1"></i>Distractores:</small>
+                                </div>
+                                {p.opciones.slice(p.correcta).map((o, i) => (
+                                  <div key={i} className="exam-info-item">
+                                    <i className="fas fa-times text-danger"></i>
+                                    <span>{o}</span>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          p.opciones.map((o, i) => (
+                            <div key={i} className="exam-info-item">
+                              <i className={i === p.correcta ? "fas fa-check-circle text-success" : "fas fa-circle text-muted"}></i>
+                              <span className={i === p.correcta ? "fw-bold text-success" : ""}>{o}</span>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   </div>

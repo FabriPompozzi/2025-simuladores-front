@@ -307,9 +307,24 @@ const ExamView = ({ examId: propExamId, onBack }) => {
                   <div key={i} className="exam-question-card-wrapper">
                     <div className="exam-card fade-in-up" style={{animationDelay: `${i * 0.1}s`}}>
                       <div className="exam-card-header">
-                        <h5 className="exam-title">
-                          Pregunta {i + 1}
-                        </h5>
+                        <div className="d-flex align-items-center gap-2">
+                          <h5 className="exam-title mb-0">
+                            Pregunta {i + 1}
+                          </h5>
+                          <span 
+                            className="badge"
+                            style={{
+                              backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : p.tipo === 'matching' ? '#9c27b0' : '#007bff',
+                              color: 'white',
+                              padding: '0.35rem 0.65rem',
+                              fontSize: '0.75rem',
+                              borderRadius: '6px'
+                            }}
+                          >
+                            <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : p.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
+                            {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : p.tipo === 'matching' ? 'Unir con Flechas' : 'Múltiple'}
+                          </span>
+                        </div>
                         <span className="exam-badge">
                           <i className="fas fa-check-circle"></i>
                           <span className="badge-text">{p.opciones?.length || 0} opciones</span>
@@ -320,23 +335,71 @@ const ExamView = ({ examId: propExamId, onBack }) => {
                           <strong>{p.texto || "Sin texto"}</strong>
                         </div>
                         <div className="exam-info">
-                          {p.opciones?.map((o, j) => (
-                            <div key={j} className="exam-info-item option-item">
-                              <i className={
-                                j === p.correcta 
-                                  ? "fas fa-check-circle text-success" 
-                                  : "fas fa-circle text-muted"
-                              }></i>
-                              <span className={`option-text ${j === p.correcta ? "fw-bold text-success" : ""}`}>
-                                {o || "Opción vacía"}
-                                {j === p.correcta && (
-                                  <span className="correct-badge">
-                                    Correcta
+                          {p.tipo === 'matching' ? (
+                            p.opciones?.slice(0, p.correcta).map((concepto, j) => {
+                              const respuesta = p.opciones[p.correcta + j];
+                              return (
+                                <div key={j} className="exam-info-item option-item d-flex align-items-center gap-2 mb-2">
+                                  <span className="badge bg-primary" style={{ fontSize: '0.75rem', minWidth: '30px' }}>
+                                    {j + 1}
                                   </span>
-                                )}
-                              </span>
-                            </div>
-                          ))}
+                                  <span style={{ fontSize: '0.9rem' }}>{concepto || "Concepto vacío"}</span>
+                                  <i className="fas fa-arrow-right text-primary"></i>
+                                  <span className="badge bg-success" style={{ fontSize: '0.75rem', minWidth: '30px' }}>
+                                    {String.fromCharCode(65 + j)}
+                                  </span>
+                                  <span style={{ fontSize: '0.9rem' }}>{respuesta || "Respuesta vacía"}</span>
+                                </div>
+                              );
+                            })
+                          ) : p.tipo === 'fill_in_blank' ? (
+                            <>
+                              <div className="mb-2">
+                                <small className="text-success fw-bold"><i className="fas fa-check-circle me-1"></i>Respuestas correctas (en orden):</small>
+                              </div>
+                              {p.opciones?.slice(0, p.correcta).map((o, j) => (
+                                <div key={j} className="exam-info-item option-item">
+                                  <span className="badge bg-success me-2" style={{ fontSize: '0.7rem' }}>{j + 1}</span>
+                                  <span className="option-text fw-bold text-success">
+                                    {o || "Respuesta vacía"}
+                                  </span>
+                                </div>
+                              ))}
+                              {p.opciones?.length > p.correcta && (
+                                <>
+                                  <div className="mt-3 mb-2">
+                                    <small className="text-danger fw-bold"><i className="fas fa-times-circle me-1"></i>Distractores:</small>
+                                  </div>
+                                  {p.opciones.slice(p.correcta).map((o, j) => (
+                                    <div key={j} className="exam-info-item option-item">
+                                      <i className="fas fa-times text-danger"></i>
+                                      <span className="option-text">
+                                        {o || "Opción vacía"}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            p.opciones?.map((o, j) => (
+                              <div key={j} className="exam-info-item option-item">
+                                <i className={
+                                  j === p.correcta 
+                                    ? "fas fa-check-circle text-success" 
+                                    : "fas fa-circle text-muted"
+                                }></i>
+                                <span className={`option-text ${j === p.correcta ? "fw-bold text-success" : ""}`}>
+                                  {o || "Opción vacía"}
+                                  {j === p.correcta && (
+                                    <span className="correct-badge">
+                                      Correcta
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            ))
+                          )}
                         </div>
                       </div>
                     </div>

@@ -468,10 +468,25 @@ const QuestionBank = () => {
                 <div key={question.id} className="modern-card mb-3" style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                   <div className="modern-card-body">
                     <div className="d-flex justify-content-between align-items-start mb-3">
-                      <h5 className="mb-0">
-                        <i className="fas fa-question-circle me-2 text-primary"></i>
-                        {question.titulo || `Pregunta #${index + 1}`}
-                      </h5>
+                      <div>
+                        <h5 className="mb-2">
+                          <i className="fas fa-question-circle me-2 text-primary"></i>
+                          {question.titulo || `Pregunta #${index + 1}`}
+                        </h5>
+                        <span 
+                          className="badge"
+                          style={{
+                            backgroundColor: question.tipo === 'true_false' ? '#28a745' : question.tipo === 'fill_in_blank' ? '#ffc107' : question.tipo === 'matching' ? '#9c27b0' : '#007bff',
+                            color: 'white',
+                            padding: '0.35rem 0.65rem',
+                            fontSize: '0.75rem',
+                            borderRadius: '6px'
+                          }}
+                        >
+                          <i className={`fas ${question.tipo === 'true_false' ? 'fa-check-double' : question.tipo === 'fill_in_blank' ? 'fa-fill-drip' : question.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
+                          {question.tipo === 'true_false' ? 'Verdadero/Falso' : question.tipo === 'fill_in_blank' ? 'Completar' : question.tipo === 'matching' ? 'Unir con Flechas' : 'Opción Múltiple'}
+                        </span>
+                      </div>
                       {editingId !== question.id ? (
                         <div className="d-flex gap-2">
                           <button
@@ -712,27 +727,77 @@ const QuestionBank = () => {
                           </div>
                         )}
                         <div className="mb-2">
-                          <strong className="text-muted">Opciones:</strong>
+                          <strong className="text-muted">{question.tipo === 'fill_in_blank' ? 'Respuestas:' : question.tipo === 'matching' ? 'Pares correctos:' : 'Opciones:'}</strong>
                         </div>
-                        <ul className="list-group mb-3">
-                          {Array.isArray(question.opciones) ? (
-                            question.opciones.map((opcion, i) => (
-                              <li
-                                key={i}
-                                className={`list-group-item ${
-                                  i === question.correcta ? 'list-group-item-success' : ''
-                                }`}
-                              >
-                                {i === question.correcta && (
-                                  <i className="fas fa-check-circle me-2 text-success"></i>
-                                )}
-                                <strong>Opción {i + 1}:</strong> {opcion}
-                              </li>
-                            ))
-                          ) : (
-                            <li className="list-group-item">Error: formato de opciones inválido</li>
-                          )}
-                        </ul>
+                        {question.tipo === 'matching' ? (
+                          <div className="list-group mb-3">
+                            {Array.isArray(question.opciones) && question.opciones.slice(0, question.correcta).map((concepto, i) => {
+                              const respuesta = question.opciones[question.correcta + i];
+                              return (
+                                <div key={i} className="list-group-item d-flex align-items-center gap-2">
+                                  <span className="badge bg-primary" style={{ fontSize: '0.85rem', minWidth: '30px' }}>
+                                    {i + 1}
+                                  </span>
+                                  <span style={{ fontSize: '0.9rem' }}>{concepto}</span>
+                                  <i className="fas fa-arrow-right text-primary mx-1"></i>
+                                  <span className="badge bg-success" style={{ fontSize: '0.85rem', minWidth: '30px' }}>
+                                    {String.fromCharCode(65 + i)}
+                                  </span>
+                                  <span style={{ fontSize: '0.9rem' }}>{respuesta}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : question.tipo === 'fill_in_blank' ? (
+                          <>
+                            <div className="mb-2">
+                              <small className="text-success fw-bold"><i className="fas fa-check-circle me-1"></i>Respuestas correctas (en orden):</small>
+                            </div>
+                            <ul className="list-group mb-2">
+                              {Array.isArray(question.opciones) && question.opciones.slice(0, question.correcta).map((opcion, i) => (
+                                <li key={i} className="list-group-item list-group-item-success">
+                                  <span className="badge bg-success me-2">{i + 1}</span>
+                                  {opcion}
+                                </li>
+                              ))}
+                            </ul>
+                            {question.opciones.length > question.correcta && (
+                              <>
+                                <div className="mb-2">
+                                  <small className="text-danger fw-bold"><i className="fas fa-times-circle me-1"></i>Distractores:</small>
+                                </div>
+                                <ul className="list-group mb-3">
+                                  {question.opciones.slice(question.correcta).map((opcion, i) => (
+                                    <li key={i} className="list-group-item">
+                                      <i className="fas fa-times text-danger me-2"></i>
+                                      {opcion}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <ul className="list-group mb-3">
+                            {Array.isArray(question.opciones) ? (
+                              question.opciones.map((opcion, i) => (
+                                <li
+                                  key={i}
+                                  className={`list-group-item ${
+                                    i === question.correcta ? 'list-group-item-success' : ''
+                                  }`}
+                                >
+                                  {i === question.correcta && (
+                                    <i className="fas fa-check-circle me-2 text-success"></i>
+                                  )}
+                                  <strong>Opción {i + 1}:</strong> {opcion}
+                                </li>
+                              ))
+                            ) : (
+                              <li className="list-group-item">Error: formato de opciones inválido</li>
+                            )}
+                          </ul>
+                        )}
                         <div className="text-muted small">
                           <i className="fas fa-calendar me-2"></i>
                           Creada: {new Date(question.createdAt).toLocaleDateString('es-ES', {
