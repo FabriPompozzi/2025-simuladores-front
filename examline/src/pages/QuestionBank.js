@@ -8,7 +8,7 @@ import { useModal } from "../hooks";
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:4000";
 
 const QuestionBank = () => {
-  const { modal, showModal, closeModal } = useModal();
+  const { modal, showModal, closeModal, setModalProcessing } = useModal();
   const [questions, setQuestions] = useState([]);
   const [showCreator, setShowCreator] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -214,6 +214,9 @@ const QuestionBank = () => {
       "¿Estás seguro de que deseas eliminar esta pregunta? Esta acción no se puede deshacer.",
       async () => {
         try {
+          // Activar el estado de procesamiento
+          setModalProcessing(true);
+          
           const token = localStorage.getItem("token");
           const response = await fetch(`${API_BASE_URL}/question-bank/${questionId}`, {
             method: "DELETE",
