@@ -23,7 +23,7 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
   
   // Usar hooks personalizados
   const { modal, showModal, closeModal, setModalProcessing } = useModal();
-  const { isInSEB, closeSEB, tryCloseSEB } = useSEB();
+  const { isInSEB, tryCloseSEB } = useSEB();
 
   // 🔒 Validación inicial de seguridad para estudiantes
   useEffect(() => {
@@ -203,35 +203,6 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
         } finally {
           setSubmitting(false);
           setModalProcessing(false);
-        }
-      },
-      true
-    );
-  };
-
-  // Handle navigation away from exam with confirmation
-  const handleLeaveExam = () => {
-    showModal(
-      'warning',
-      'Salir del Examen',
-      '¿Estás seguro de que quieres salir del examen? Se perderá todo tu progreso y no podrás volver a intentarlo.',
-      async () => {
-        closeModal();
-        
-        if (isInSEB) {
-          // Intentar cerrar SEB automáticamente
-          const closed = await tryCloseSEB();
-          
-          // Si el usuario canceló (puso "NO"), redirigir a login
-          if (!closed) {
-            navigate('/login');
-          }
-        } else {
-          if (onBack) {
-            onBack();
-          } else {
-            navigate('/student-exam');
-          }
         }
       },
       true

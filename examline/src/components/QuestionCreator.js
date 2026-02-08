@@ -26,6 +26,7 @@ const QuestionCreator = ({ onAddQuestion }) => {
       setOpciones(["", ""]);
       setCorrecta(0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tipoPregunta]);
 
   // Agregar opción nueva
