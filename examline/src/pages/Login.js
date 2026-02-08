@@ -31,6 +31,10 @@ const Login = () => {
     setError("");
 
     try {
+      // Limpiar cualquier sesión anterior antes de hacer login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
       const data = await loginUser({ email, password });
       login(data.token, data.user);
 
@@ -41,7 +45,12 @@ const Login = () => {
       }
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error al iniciar sesión");
+      // Mostrar mensaje específico para error 401
+      if (err.status === 401) {
+        setError("Contraseña incorrecta");
+      } else {
+        setError(err.message || "Error al iniciar sesión");
+      }
     } finally {
       setIsLoading(false);
       setIsOnCooldown(true);
