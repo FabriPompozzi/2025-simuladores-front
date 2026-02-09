@@ -31,6 +31,10 @@ const Login = () => {
     setError("");
 
     try {
+      // Limpiar cualquier sesión anterior antes de hacer login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
       const data = await loginUser({ email, password });
       login(data.token, data.user);
 
@@ -41,7 +45,12 @@ const Login = () => {
       }
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error al iniciar sesión");
+      // Mostrar mensaje específico para error 401
+      if (err.status === 401) {
+        setError("Contraseña incorrecta");
+      } else {
+        setError(err.message || "Error al iniciar sesión");
+      }
     } finally {
       setIsLoading(false);
       setIsOnCooldown(true);
@@ -136,11 +145,15 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Ingresa tu email"
+                disabled={isLoading}
                 style={{
                   padding: "0.75rem 1rem",
                   border: "1px solid var(--border-color)",
                   borderRadius: "8px",
                   fontSize: "1rem",
+                  backgroundColor: isLoading ? '#e9ecef' : 'white',
+                  cursor: isLoading ? 'not-allowed' : 'text',
+                  opacity: isLoading ? 0.7 : 1,
                 }}
               />
               <div className="invalid-feedback">Ingrese un email válido</div>
@@ -162,11 +175,15 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Ingresa tu contraseña"
+                disabled={isLoading}
                 style={{
                   padding: "0.75rem 1rem",
                   border: "1px solid var(--border-color)",
                   borderRadius: "8px",
                   fontSize: "1rem",
+                  backgroundColor: isLoading ? '#e9ecef' : 'white',
+                  cursor: isLoading ? 'not-allowed' : 'text',
+                  opacity: isLoading ? 0.7 : 1,
                 }}
               />
               <div className="invalid-feedback">Ingrese su contraseña</div>

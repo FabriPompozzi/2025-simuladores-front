@@ -22,7 +22,12 @@ const Principal = () => {
         setExams(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error fetching exams:", err);
-        setError(err.message || "Error al cargar los exámenes");
+        // Mensaje específico para error 403
+        if (err.status === 403) {
+          setError("No está autorizado para ver estos exámenes");
+        } else {
+          setError(err.message || "Error al cargar los exámenes");
+        }
         setExams([]); // Ensure it's always an array
       } finally {
         setLoading(false);
@@ -122,6 +127,13 @@ const Principal = () => {
               <div className="d-flex gap-2 flex-wrap justify-content-end">
                 <button 
                   className="modern-btn modern-btn-secondary modern-btn-sm" 
+                  onClick={() => navigate("/question-bank")}
+                >
+                  <i className="fas fa-database me-2"></i>
+                  <span className="btn-text">Banco de Preguntas</span>
+                </button>
+                <button 
+                  className="modern-btn modern-btn-secondary modern-btn-sm" 
                   onClick={() => navigate("/exam-windows")}
                 >
                   <i className="fas fa-calendar-alt me-2"></i>
@@ -203,6 +215,12 @@ const Principal = () => {
                           <div className="exam-info-item">
                             <i className="fas fa-question-circle"></i>
                             <span>Preguntas: {exam.preguntas?.length || 0}</span>
+                          </div>
+                        )}
+                        {exam.tipo !== 'programming' && (
+                          <div className="exam-info-item">
+                            <i className="fas fa-random"></i>
+                            <span>Orden: {exam.ordenAleatorio ? 'Aleatorio' : 'Fijo'}</span>
                           </div>
                         )}
                       </div>

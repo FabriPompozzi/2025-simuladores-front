@@ -18,6 +18,7 @@ import WindowInscriptions from "./pages/WindowInscriptions";
 import ExamWindowResults from "./pages/ExamWindowResults";
 import SEBExamLauncher from "./pages/SEBExamLauncher";
 import ExamRanking from "./pages/ExamRanking";
+import QuestionBank from "./pages/QuestionBank";
 import "./modern-examline.css";
 
 function App() {
@@ -75,6 +76,11 @@ function App() {
           <Route path="/exam-windows" element={
             <ProfessorRoute>
               <ExamWindows />
+            </ProfessorRoute>
+          } />
+          <Route path="/question-bank" element={
+            <ProfessorRoute>
+              <QuestionBank />
             </ProfessorRoute>
           } />
           <Route path="/exam-windows/:windowId/inscriptions" element={

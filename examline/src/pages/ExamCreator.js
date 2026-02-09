@@ -5,6 +5,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { useModal } from "../hooks";
 import BackToMainButton from "../components/BackToMainButton";
 import Modal from "../components/Modal";
+import QuestionCreator from "../components/QuestionCreator";
+import QuestionBankSelector from "../components/QuestionBankSelector";
 import { createExam } from "../services/api";
 
 const ExamCreator = () => {
@@ -12,12 +14,10 @@ const ExamCreator = () => {
   const { modal, showModal, closeModal } = useModal();
   const [titulo, setTitulo] = useState("");
   const [tipoExamen, setTipoExamen] = useState("multiple_choice"); // "multiple_choice" | "programming"
+  const [ordenAleatorio, setOrdenAleatorio] = useState(false); // Orden aleatorio de preguntas
   
   // Estados para exámenes de multiple choice
   const [preguntas, setPreguntas] = useState([]);
-  const [textoPregunta, setTextoPregunta] = useState("");
-  const [opciones, setOpciones] = useState(["", ""]);
-  const [correcta, setCorrecta] = useState(0);
   
   // Estados para exámenes de programación
   const [lenguajeProgramacion, setLenguajeProgramacion] = useState("python");
@@ -30,53 +30,21 @@ const ExamCreator = () => {
   
   const [error, setError] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showBankSelector, setShowBankSelector] = useState(false);
 
-  // Agregar opción nueva
-  const handleAgregarOpcion = () => {
-    if (opciones.length < 10) { // Máximo 10 opciones
-      setOpciones([...opciones, ""]);
-    }
+  // Agregar pregunta al listado (callback para el componente hijo)
+  const handleAddQuestion = (nuevaPregunta) => {
+    setPreguntas([...preguntas, nuevaPregunta]);
   };
 
-  // Eliminar opción
-  const handleEliminarOpcion = (index) => {
-    if (opciones.length > 2) { // Mínimo 2 opciones
-      const nuevasOpciones = opciones.filter((_, i) => i !== index);
-      setOpciones(nuevasOpciones);
-      // Ajustar la respuesta correcta si es necesario
-      if (correcta >= nuevasOpciones.length) {
-        setCorrecta(nuevasOpciones.length - 1);
-      }
-    }
+  // Agregar preguntas desde el banco
+  const handleAddQuestionsFromBank = (selectedQuestions) => {
+    setPreguntas([...preguntas, ...selectedQuestions]);
   };
 
-  // Agregar pregunta al listado
-  const handleAgregarPregunta = () => {
-    if (!textoPregunta.trim()) {
-      setError("Ingrese el texto de la pregunta");
-      return;
-    }
-    
-    if (opciones.length < 2) {
-      setError("La pregunta debe tener al menos 2 opciones");
-      return;
-    }
-    
-    if (opciones.some(o => !o.trim())) {
-      setError("Complete todas las opciones antes de agregar la pregunta");
-      return;
-    }
-
-    setPreguntas([
-      ...preguntas,
-      { texto: textoPregunta, opciones: [...opciones], correcta }
-    ]);
-
-    // Limpiar inputs
-    setTextoPregunta("");
-    setOpciones(["", ""]);
-    setCorrecta(0);
-    setError("");
+  // Eliminar pregunta del examen
+  const handleRemoveQuestion = (index) => {
+    setPreguntas(preguntas.filter((_, i) => i !== index));
   };
 
   // Funciones para manejar test cases
@@ -102,7 +70,8 @@ const ExamCreator = () => {
     try {
       const examData = {
         titulo,
-        tipo: tipoExamen
+        tipo: tipoExamen,
+        ordenAleatorio
       };
 
       // Agregar datos específicos según el tipo
@@ -223,7 +192,7 @@ const ExamCreator = () => {
               />
             </div>
             
-            <div className="mb-0">
+            <div className="mb-3">
               <label className="form-label d-flex align-items-center gap-2">
                 <i className="fas fa-clipboard-list text-muted"></i>
                 Tipo de Examen
@@ -239,9 +208,33 @@ const ExamCreator = () => {
                   fontSize: '1rem'
                 }}
               >
-                <option value="multiple_choice">Múltiple Choice</option>
+                <option value="multiple_choice">Preguntas</option>
                 <option value="programming">Programación</option>
               </select>
+            </div>
+            
+            <div className="mb-0">
+              <label className="form-label d-flex align-items-center gap-2">
+                <i className="fas fa-random text-muted"></i>
+                Orden Aleatorio de Preguntas
+              </label>
+              <div className="form-check form-switch mt-2">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="ordenAleatorioSwitch"
+                  checked={ordenAleatorio}
+                  onChange={(e) => setOrdenAleatorio(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="ordenAleatorioSwitch">
+                  {ordenAleatorio ? "Las preguntas aparecerán en orden aleatorio para cada estudiante" : "Las preguntas aparecerán en el orden definido"}
+                </label>
+              </div>
+              <small className="form-text text-muted">
+                {ordenAleatorio 
+                  ? "✓ Cada estudiante verá las preguntas en un orden diferente"
+                  : "Las preguntas siempre aparecerán en el mismo orden"}
+              </small>
             </div>
           </div>
         </div>
@@ -455,120 +448,50 @@ const ExamCreator = () => {
 
         {/* Agregar pregunta - Solo para múltiple choice */}
         {tipoExamen === "multiple_choice" && (
-          <div className="modern-card mb-4">
-            <div className="modern-card-header">
-              <h3 className="modern-card-title">
-                <i className="fas fa-question-circle me-2"></i>
-                Agregar Pregunta
-              </h3>
-            </div>
-          <div className="modern-card-body">
-          <div className="mb-4">
-            <label className="form-label d-flex align-items-center gap-2">
-              <i className="fas fa-comment-alt text-muted"></i>
-              Texto de la pregunta
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Escribe aquí tu pregunta"
-              value={textoPregunta}
-              onChange={(e) => setTextoPregunta(e.target.value)}
-              style={{
-                padding: '0.75rem 1rem',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                fontSize: '1rem'
-              }}
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="form-label d-flex align-items-center gap-2">
-              <i className="fas fa-list text-muted"></i>
-              Opciones de respuesta (mínimo 2, máximo 10)
-            </label>
-            <div className="exam-creator-options-list">
-              {opciones.map((op, i) => (
-                <div key={i} className="exam-creator-option-item mb-2 d-flex gap-2">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder={`Opción ${i + 1}`}
-                    value={op}
-                    onChange={(e) => {
-                      const nuevasOpciones = [...opciones];
-                      nuevasOpciones[i] = e.target.value;
-                      setOpciones(nuevasOpciones);
-                    }}
-                    style={{
-                      padding: '0.6rem 0.8rem',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '6px',
-                      fontSize: '0.9rem'
-                    }}
-                  />
-                  {opciones.length > 2 && (
-                    <button
-                      type="button"
-                      className="btn btn-outline-danger btn-sm"
-                      onClick={() => handleEliminarOpcion(i)}
-                      title="Eliminar opción"
-                      style={{ minWidth: '40px' }}
-                    >
-                      <i className="fas fa-trash"></i>
-                    </button>
-                  )}
+          <>
+            <div className="modern-card mb-4">
+              <div className="modern-card-header">
+                <h3 className="modern-card-title">
+                  <i className="fas fa-question-circle me-2"></i>
+                  Agregar Preguntas al Examen
+                </h3>
+              </div>
+              <div className="modern-card-body">
+                <div className="alert alert-info mb-3">
+                  <i className="fas fa-info-circle me-2"></i>
+                  <strong>Tienes dos opciones:</strong> crear una pregunta nueva desde cero o seleccionar preguntas guardadas en tu banco de preguntas.
                 </div>
-              ))}
+                <div className="d-flex gap-3 justify-content-center flex-wrap">
+                  <button
+                    className="modern-btn modern-btn-primary"
+                    onClick={() => setShowBankSelector(true)}
+                    style={{ minWidth: '250px' }}
+                  >
+                    <i className="fas fa-database me-2"></i>
+                    <span className="button-text">Seleccionar del Banco</span>
+                  </button>
+                  <div className="text-muted d-flex align-items-center">
+                    <strong>o</strong>
+                  </div>
+                  <button
+                    className="modern-btn modern-btn-secondary"
+                    onClick={() => {
+                      const creator = document.getElementById('question-creator-section');
+                      if (creator) creator.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    style={{ minWidth: '250px' }}
+                  >
+                    <i className="fas fa-plus-circle me-2"></i>
+                    <span className="button-text">Crear Pregunta Nueva</span>
+                  </button>
+                </div>
+              </div>
             </div>
-            {opciones.length < 10 && (
-              <button
-                type="button"
-                className="btn btn-outline-primary btn-sm mt-2"
-                onClick={handleAgregarOpcion}
-              >
-                <i className="fas fa-plus me-2"></i>
-                Agregar opción
-              </button>
-            )}
-          </div>
-
-          <div className="mb-4">
-            <label className="form-label d-flex align-items-center gap-2">
-              <i className="fas fa-check-circle text-muted"></i>
-              Respuesta correcta
-            </label>
-            <select
-              className="form-select"
-              value={correcta}
-              onChange={(e) => setCorrecta(Number(e.target.value))}
-              style={{
-                padding: '0.75rem 1rem',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                fontSize: '1rem'
-              }}
-            >
-              {opciones.map((_, i) => (
-                <option key={i} value={i}>
-                  Opción {i + 1}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="exam-creator-buttons">
-            <button 
-              className="modern-btn modern-btn-secondary"
-              onClick={handleAgregarPregunta}
-            >
-              <i className="fas fa-plus me-2"></i>
-              <span className="button-text">Agregar Pregunta</span>
-            </button>
-          </div>
-        </div>
-      </div>
+            
+            <div id="question-creator-section">
+              <QuestionCreator onAddQuestion={handleAddQuestion} />
+            </div>
+          </>
         )}
 
       {/* Lista de preguntas - Solo para múltiple choice */}
@@ -596,26 +519,93 @@ const ExamCreator = () => {
               {preguntas.map((p, idx) => (
                 <div key={idx} className="exam-creator-question-card">
                   <div className="exam-card">
-                    <div className="exam-card-header">
-                      <h5 className="exam-title">
-                        <span className="question-number">Pregunta {idx + 1}</span>
-                      </h5>
-                      <span className="exam-badge">
-                        <i className="fas fa-check-circle"></i>
-                        <span className="badge-text">Lista</span>
-                      </span>
+                    <div className="exam-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <div className="d-flex align-items-center gap-2">
+                        <h5 className="exam-title mb-0">
+                          <span className="question-number">Pregunta {idx + 1}</span>
+                        </h5>
+                        <span 
+                          className="badge"
+                          style={{
+                            backgroundColor: p.tipo === 'true_false' ? '#28a745' : p.tipo === 'fill_in_blank' ? '#ffc107' : p.tipo === 'matching' ? '#9c27b0' : '#007bff',
+                            color: 'white',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.7rem',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          <i className={`fas ${p.tipo === 'true_false' ? 'fa-check-double' : p.tipo === 'fill_in_blank' ? 'fa-fill-drip' : p.tipo === 'matching' ? 'fa-arrows-alt-h' : 'fa-list-ul'} me-1`}></i>
+                          {p.tipo === 'true_false' ? 'V/F' : p.tipo === 'fill_in_blank' ? 'Completar' : p.tipo === 'matching' ? 'Unir' : 'Múltiple'}
+                        </span>
+                        <span className="exam-badge">
+                          <i className="fas fa-check-circle"></i>
+                          <span className="badge-text">Lista</span>
+                        </span>
+                      </div>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => handleRemoveQuestion(idx)}
+                        title="Eliminar pregunta"
+                        style={{ padding: '0.25rem 0.5rem' }}
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
                     </div>
                     <div className="exam-card-body">
                       <div className="question-text mb-3">
                         <strong>{p.texto}</strong>
                       </div>
                       <div className="exam-info">
-                        {p.opciones.map((o, i) => (
-                          <div key={i} className="exam-info-item">
-                            <i className={i === p.correcta ? "fas fa-check-circle text-success" : "fas fa-circle text-muted"}></i>
-                            <span className={i === p.correcta ? "fw-bold text-success" : ""}>{o}</span>
-                          </div>
-                        ))}
+                        {p.tipo === 'matching' ? (
+                          p.opciones.slice(0, p.correcta).map((concepto, i) => {
+                            const respuesta = p.opciones[p.correcta + i];
+                            return (
+                              <div key={i} className="exam-info-item d-flex align-items-center gap-2 mb-2">
+                                <span className="badge bg-primary" style={{ fontSize: '0.7rem', minWidth: '25px' }}>
+                                  {i + 1}
+                                </span>
+                                <span style={{ fontSize: '0.85rem' }}>{concepto}</span>
+                                <i className="fas fa-arrow-right text-primary" style={{ fontSize: '0.7rem' }}></i>
+                                <span className="badge bg-success" style={{ fontSize: '0.7rem', minWidth: '25px' }}>
+                                  {String.fromCharCode(65 + i)}
+                                </span>
+                                <span style={{ fontSize: '0.85rem' }}>{respuesta}</span>
+                              </div>
+                            );
+                          })
+                        ) : p.tipo === 'fill_in_blank' ? (
+                          <>
+                            <div className="mb-2">
+                              <small className="text-success fw-bold"><i className="fas fa-check-circle me-1"></i>Respuestas correctas (en orden):</small>
+                            </div>
+                            {p.opciones.slice(0, p.correcta).map((o, i) => (
+                              <div key={i} className="exam-info-item">
+                                <span className="badge bg-success me-2" style={{ fontSize: '0.7rem' }}>{i + 1}</span>
+                                <span className="fw-bold text-success">{o}</span>
+                              </div>
+                            ))}
+                            {p.opciones.length > p.correcta && (
+                              <>
+                                <div className="mt-2 mb-2">
+                                  <small className="text-danger fw-bold"><i className="fas fa-times-circle me-1"></i>Distractores:</small>
+                                </div>
+                                {p.opciones.slice(p.correcta).map((o, i) => (
+                                  <div key={i} className="exam-info-item">
+                                    <i className="fas fa-times text-danger"></i>
+                                    <span>{o}</span>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          p.opciones.map((o, i) => (
+                            <div key={i} className="exam-info-item">
+                              <i className={i === p.correcta ? "fas fa-check-circle text-success" : "fas fa-circle text-muted"}></i>
+                              <span className={i === p.correcta ? "fw-bold text-success" : ""}>{o}</span>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   </div>
@@ -663,6 +653,13 @@ const ExamCreator = () => {
         showCancel={modal.showCancel}
         confirmText={(modal.type === 'warning') ? 'Confirmar' : 'Entendido'}
         cancelText="Cancelar"
+      />
+
+      {/* Question Bank Selector Modal */}
+      <QuestionBankSelector
+        show={showBankSelector}
+        onClose={() => setShowBankSelector(false)}
+        onSelectQuestions={handleAddQuestionsFromBank}
       />
     </div>
   );

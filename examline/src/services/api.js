@@ -14,6 +14,48 @@ const getAuthHeaders = () => {
 
 // Helper function to handle API responses
 const handleResponse = async (response) => {
+  // Si es 401 (no autorizado) o 403 y el error es por token expirado, limpiar sesión
+  if (response.status === 401 || response.status === 403) {
+    try {
+      const data = await response.json();
+      
+      // Si el error menciona token expirado, limpiar todo
+      if (data.error && (
+        data.error.toLowerCase().includes('token') || 
+        data.error.toLowerCase().includes('expired') ||
+        data.error.toLowerCase().includes('unauthorized')
+      )) {
+        console.log('Token expirado detectado en respuesta API, limpiando sesión...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Redirigir al login si no estamos ya ahí
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+      
+      // Mensaje más específico para errores 403
+      let errorMessage = data.error;
+      if (!errorMessage && response.status === 403) {
+        errorMessage = 'No está autorizado para ver este recurso';
+      }
+      
+      const error = new Error(errorMessage || `HTTP error! status: ${response.status}`);
+      error.status = response.status;
+      error.code = data.code;
+      throw error;
+    } catch (parseError) {
+      // Si no se puede parsear el JSON, crear error con mensaje apropiado
+      const errorMessage = response.status === 403 
+        ? 'No está autorizado para ver este recurso'
+        : `HTTP error! status: ${response.status}`;
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      throw error;
+    }
+  }
+  
   const data = await response.json();
   
   if (!response.ok) {
