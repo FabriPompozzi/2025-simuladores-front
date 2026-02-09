@@ -549,8 +549,25 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                       </span>
                       <span className="badge badge-primary">{i + 1}</span>
                     </div>
+                    {/* ESTILO ORIGINAL - Puede causar texto aplastado con preguntas largas 
                     <h5 className="exam-title" style={{ marginTop: 0 }}>
                       <span className="question-text">{p.texto || "Sin texto"}</span>
+                    </h5>*/}
+                    {/* ESTILO NUEVO - Permite que la caja se estire verticalmente con textos largos*/}
+                    <h5 className="exam-title" style={{ 
+                      marginTop: 0,
+                      minHeight: 'auto',
+                      height: 'auto',
+                      whiteSpace: 'normal',
+                      wordWrap: 'break-word',
+                      overflowWrap: 'break-word'
+                    }}>
+                      <span className="question-text" style={{
+                        display: 'block',
+                        whiteSpace: 'normal',
+                        wordWrap: 'break-word',
+                        lineHeight: '1.5'
+                      }}>{p.texto || "Sin texto"}</span>
                     </h5>
                   </div>
                   <div className="exam-card-body">
