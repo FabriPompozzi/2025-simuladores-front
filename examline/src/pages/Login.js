@@ -145,11 +145,15 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Ingresa tu email"
+                disabled={isLoading}
                 style={{
                   padding: "0.75rem 1rem",
                   border: "1px solid var(--border-color)",
                   borderRadius: "8px",
                   fontSize: "1rem",
+                  backgroundColor: isLoading ? '#e9ecef' : 'white',
+                  cursor: isLoading ? 'not-allowed' : 'text',
+                  opacity: isLoading ? 0.7 : 1,
                 }}
               />
               <div className="invalid-feedback">Ingrese un email válido</div>
@@ -171,11 +175,15 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Ingresa tu contraseña"
+                disabled={isLoading}
                 style={{
                   padding: "0.75rem 1rem",
                   border: "1px solid var(--border-color)",
                   borderRadius: "8px",
                   fontSize: "1rem",
+                  backgroundColor: isLoading ? '#e9ecef' : 'white',
+                  cursor: isLoading ? 'not-allowed' : 'text',
+                  opacity: isLoading ? 0.7 : 1,
                 }}
               />
               <div className="invalid-feedback">Ingrese su contraseña</div>

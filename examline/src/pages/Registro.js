@@ -159,11 +159,15 @@ const Registro = () => {
                     setNombre(e.target.value);
                     setNombreError(validateName(e.target.value));
                   }}
+                  disabled={isLoading}
                   style={{
                     padding: '0.6rem 0.8rem',
                     border: '1px solid var(--border-color)',
                     borderRadius: '6px',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    backgroundColor: isLoading ? '#e9ecef' : 'white',
+                    cursor: isLoading ? 'not-allowed' : 'text',
+                    opacity: isLoading ? 0.7 : 1,
                   }}
                 />
                 <div className="form-text" style={{ color: 'var(--text-color-3)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
@@ -188,11 +192,15 @@ const Registro = () => {
                     setEmail(e.target.value);
                     setEmailError(validateEmail(e.target.value));
                   }}
+                  disabled={isLoading}
                   style={{
                     padding: '0.6rem 0.8rem',
                     border: '1px solid var(--border-color)',
                     borderRadius: '6px',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    backgroundColor: isLoading ? '#e9ecef' : 'white',
+                    cursor: isLoading ? 'not-allowed' : 'text',
+                    opacity: isLoading ? 0.7 : 1,
                   }}
                 />
                 <div className="form-text" style={{ color: 'var(--text-color-3)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
@@ -217,11 +225,15 @@ const Registro = () => {
                     setPassword(e.target.value);
                     setPasswordError(validatePassword(e.target.value));
                   }}
+                  disabled={isLoading}
                   style={{
                     padding: '0.6rem 0.8rem',
                     border: '1px solid var(--border-color)',
                     borderRadius: '6px',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    backgroundColor: isLoading ? '#e9ecef' : 'white',
+                    cursor: isLoading ? 'not-allowed' : 'text',
+                    opacity: isLoading ? 0.7 : 1,
                   }}
                 />
                 <div className="form-text" style={{ color: 'var(--text-color-3)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
@@ -249,6 +261,7 @@ const Registro = () => {
                         id="isProfessor"
                         checked={isProfessor}
                         onChange={() => setIsProfessor(!isProfessor)}
+                        disabled={isLoading}
                         style={{ transform: 'scale(1.1)' }}
                       />
                       <label className="form-check-label" htmlFor="isProfessor" style={{ fontSize: '0.9rem', fontWeight: '500' }}>
