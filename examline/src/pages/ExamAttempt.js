@@ -667,6 +667,12 @@ const ExamAttempt = ({ examId: propExamId, onBack }) => {
                                                 while (current.length < numConceptos) {
                                                   current.push(null);
                                                 }
+                                                // Quitar esta respuesta de cualquier otro concepto al que estuviera conectada
+                                                for (let c = 0; c < current.length; c++) {
+                                                  if (c !== selectedConcept && current[c] === respuestaIdx) {
+                                                    current[c] = null;
+                                                  }
+                                                }
                                                 // Asignar la respuesta al concepto actual
                                                 current[selectedConcept] = respuestaIdx;
                                                 return {
